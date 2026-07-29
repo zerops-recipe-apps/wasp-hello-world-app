@@ -69,7 +69,7 @@ zerops:
     run:
       base: nodejs@24
       initCommands:
-        - zsc execOnce ${appVersionId} -- sh -c 'cd .wasp/out/server && npm run db-migrate-prod'
+        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- sh -c 'node_modules/.bin/prisma migrate deploy --schema=.wasp/out/db/schema.prisma'
       ports:
         - port: 3001
           httpSupport: true

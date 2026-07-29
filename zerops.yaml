@@ -65,7 +65,9 @@ zerops:
       # zsc execOnce runs Prisma migrate deploy exactly once per
       # app version — safe when minContainers > 1.
       initCommands:
-        - zsc execOnce ${appVersionId} -- sh -c 'cd .wasp/out/server && npm run db-migrate-prod'
+        # Run from app root — prisma lives in deployed node_modules, not server/.
+        # retryUntilSuccessful waits for the sibling db service to accept connections.
+        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- sh -c 'node_modules/.bin/prisma migrate deploy --schema=.wasp/out/db/schema.prisma'
       ports:
         - port: 3001
           httpSupport: true
