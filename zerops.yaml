@@ -20,10 +20,11 @@ zerops:
         # and environment — Vite inlines this into the client bundle.
         - node scripts/generate-build-env.cjs
         - npx wasp build
+        # build:client copies Wasp's 200.html → index.html for Nginx.
         - npm run build:client
 
       deployFiles:
-        # Strip build/ prefix — contents become the Nginx document root.
+        # Strip build/ prefix — index.html + assets become the Nginx docroot.
         - .wasp/out/web-app/build/~
 
       cache:
