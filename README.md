@@ -56,7 +56,7 @@ zerops:
         - node_modules
         - .wasp/out/server/bundle
         - .wasp/out/server/node_modules
-        - .wasp/out/server/package*.json
+        - .wasp/out/server/package.json
         - .wasp/out/db
       cache:
         - node_modules
