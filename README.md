@@ -31,8 +31,8 @@ zerops:
     build:
       base: nodejs@24
       buildCommands:
-        - npm install --ignore-scripts=false
         - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
+        - NPM_CONFIG_IGNORE_SCRIPTS=false wasp install
         - node scripts/generate-build-env.cjs
         - wasp build
         - npm run build:client
@@ -48,8 +48,8 @@ zerops:
     build:
       base: nodejs@24
       buildCommands:
-        - npm install --ignore-scripts=false
         - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
+        - NPM_CONFIG_IGNORE_SCRIPTS=false wasp install
         - wasp build
         - cd .wasp/out/server && npm run bundle
       deployFiles:
@@ -83,8 +83,8 @@ zerops:
       base: nodejs@24
       os: ubuntu
       buildCommands:
-        - npm install --ignore-scripts=false
         - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
+        - NPM_CONFIG_IGNORE_SCRIPTS=false wasp install
       deployFiles: ./
       cache:
         - node_modules
@@ -116,8 +116,8 @@ The API service also receives `DATABASE_URL` from `${db_*}` hostname references 
 ### 3. Local development
 
 ```bash
-npm install --ignore-scripts=false
 npm install -g @wasp.sh/wasp-cli@0.25.0
+NPM_CONFIG_IGNORE_SCRIPTS=false wasp install
 wasp start db   # optional local Postgres via Wasp
 wasp start      # client :3000, server :3001
 ```

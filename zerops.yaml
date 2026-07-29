@@ -10,10 +10,10 @@ zerops:
     build:
       base: nodejs@24
       buildCommands:
-        # Wasp and Prisma need install scripts — override the repo
-        # .npmrc ignore-scripts default for the build container only.
-        - npm install --ignore-scripts=false
+        # Install Wasp CLI first, then wasp install (not plain npm install —
+        # Wasp 0.25 tracks internal deps and rejects stale npm-only installs).
         - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
+        - NPM_CONFIG_IGNORE_SCRIPTS=false wasp install
         # Generate src/build-env.ts with Wasp version, build timestamp,
         # and environment — Vite inlines this into the client bundle.
         - node scripts/generate-build-env.cjs
@@ -37,8 +37,8 @@ zerops:
     build:
       base: nodejs@24
       buildCommands:
-        - npm install --ignore-scripts=false
         - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
+        - NPM_CONFIG_IGNORE_SCRIPTS=false wasp install
         - wasp build
         - cd .wasp/out/server && npm run bundle
 
@@ -81,8 +81,8 @@ zerops:
       base: nodejs@24
       os: ubuntu
       buildCommands:
-        - npm install --ignore-scripts=false
         - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
+        - NPM_CONFIG_IGNORE_SCRIPTS=false wasp install
       deployFiles: ./
       cache:
         - node_modules

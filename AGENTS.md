@@ -47,7 +47,7 @@ This project uses the Wasp framework.
 ## Notes
 
 - Wasp 0.25 requires Node.js `>=24.14.1` — Zerops uses `nodejs@24`.
-- Build commands pass `--ignore-scripts=false` because Wasp/Prisma need install scripts; the repo `.npmrc` keeps `ignore-scripts=true` for local safety.
+- Build commands use `wasp install` (not plain `npm install`) because Wasp 0.25 tracks internal deps; pass `NPM_CONFIG_IGNORE_SCRIPTS=false` to override the repo `.npmrc`.
 - `REACT_APP_API_URL` is embedded into the client bundle at build time (Wasp 0.25 client env name).
 - `scripts/generate-build-env.cjs` writes `src/build-env.ts` at build time; Vite inlines it into the client bundle.
 - Static assets (logos, favicon, status-page.css) live in `public/` and are copied to the client build output.
