@@ -52,8 +52,10 @@ zerops:
         - NPM_CONFIG_IGNORE_SCRIPTS=false wasp install
         - wasp build
         - cd .wasp/out/server && npm run bundle
+        - cp scripts/migrate-prod.cjs migrate-prod.cjs
       deployFiles:
         - node_modules
+        - migrate-prod.cjs
         - .wasp/out/server/bundle
         - .wasp/out/server/node_modules
         - .wasp/out/server/package.json
@@ -69,13 +71,13 @@ zerops:
     run:
       base: nodejs@24
       initCommands:
-        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- sh -c 'node_modules/.bin/prisma migrate deploy --schema=.wasp/out/db/schema.prisma'
+        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node migrate-prod.cjs
       ports:
         - port: 3001
           httpSupport: true
       envVariables:
         NODE_ENV: production
-        DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/db
+        DATABASE_URL: ${db_connectionString}
       start: sh -c 'cd .wasp/out/server && npm run start-production'
 
   - setup: dev
@@ -97,7 +99,7 @@ zerops:
         - port: 3001
           httpSupport: true
       envVariables:
-        DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/db
+        DATABASE_URL: ${db_connectionString}
       start: zsc noop --silent
 ```
 
@@ -111,7 +113,7 @@ Set these at the **project** level in your recipe `import.yaml` (see [Wasp self-
 | `WASP_SERVER_URL` | API (`prod-api`) | Public URL of the API (port 3001) |
 | `WASP_WEB_CLIENT_URL` | API (`prod-api`) | Public URL of the static client |
 
-The API service also receives `DATABASE_URL` from `${db_*}` hostname references in `zerops.yaml`.
+The API service receives `DATABASE_URL` from `${db_connectionString}` (the managed PostgreSQL connection string).
 
 ### 3. Local development
 

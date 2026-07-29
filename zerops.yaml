@@ -41,10 +41,14 @@ zerops:
         - NPM_CONFIG_IGNORE_SCRIPTS=false wasp install
         - wasp build
         - cd .wasp/out/server && npm run bundle
+        - cp scripts/migrate-prod.cjs migrate-prod.cjs
+        - test -x node_modules/.bin/prisma
+        - test -d .wasp/out/db/migrations
 
       deployFiles:
-        # Root node_modules carries @prisma/client for migrations.
+        # Root node_modules carries @prisma/client and the prisma CLI for migrations.
         - node_modules
+        - migrate-prod.cjs
         - .wasp/out/server/bundle
         - .wasp/out/server/node_modules
         - .wasp/out/server/package.json
@@ -65,15 +69,13 @@ zerops:
       # zsc execOnce runs Prisma migrate deploy exactly once per
       # app version — safe when minContainers > 1.
       initCommands:
-        # Run from app root — prisma lives in deployed node_modules, not server/.
-        # retryUntilSuccessful waits for the sibling db service to accept connections.
-        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- sh -c 'node_modules/.bin/prisma migrate deploy --schema=.wasp/out/db/schema.prisma'
+        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node migrate-prod.cjs
       ports:
         - port: 3001
           httpSupport: true
       envVariables:
         NODE_ENV: production
-        DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/db
+        DATABASE_URL: ${db_connectionString}
       start: sh -c 'cd .wasp/out/server && npm run start-production'
 
   # Dev setup: deploys full source so a developer or agent can SSH
@@ -98,5 +100,5 @@ zerops:
         - port: 3001
           httpSupport: true
       envVariables:
-        DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/db
+        DATABASE_URL: ${db_connectionString}
       start: zsc noop --silent
