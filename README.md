@@ -55,10 +55,8 @@ zerops:
         - npx wasp install
         - npx wasp build
         - cd .wasp/out/server && npm run bundle
-        - cp scripts/migrate-prod.cjs migrate-prod.cjs
       deployFiles:
         - node_modules
-        - migrate-prod.cjs
         - .wasp/out/server/bundle
         - .wasp/out/server/node_modules
         - .wasp/out/server/package.json
@@ -74,8 +72,6 @@ zerops:
     run:
       base: nodejs@24
       os: ubuntu
-      initCommands:
-        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node migrate-prod.cjs
       ports:
         - port: 3001
           httpSupport: true
@@ -118,7 +114,7 @@ Set these at the **project** level in your recipe `import.yaml` (see [Wasp self-
 | `WASP_SERVER_URL` | API (`prod-api`) | Public URL of the API (port 3001) |
 | `WASP_WEB_CLIENT_URL` | API (`prod-api`) | Public URL of the static client |
 
-The API service receives `DATABASE_URL` from `${db_connectionString}` (the managed PostgreSQL connection string).
+The API service receives `DATABASE_URL` from `${db_connectionString}` when you add Prisma entities; the hello-world schema has none, so no runtime migration runs.
 
 ### 3. Local development
 

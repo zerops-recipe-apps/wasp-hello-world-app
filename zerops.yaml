@@ -47,14 +47,10 @@ zerops:
         - npx wasp install
         - npx wasp build
         - cd .wasp/out/server && npm run bundle
-        - cp scripts/migrate-prod.cjs migrate-prod.cjs
-        - test -x node_modules/.bin/prisma
         - test -d .wasp/out/db/migrations
 
       deployFiles:
-        # Root node_modules carries @prisma/client and the prisma CLI for migrations.
         - node_modules
-        - migrate-prod.cjs
         - .wasp/out/server/bundle
         - .wasp/out/server/node_modules
         - .wasp/out/server/package.json
@@ -73,15 +69,17 @@ zerops:
     run:
       base: nodejs@24
       os: ubuntu
-      # zsc execOnce runs Prisma migrate deploy exactly once per
-      # app version — safe when minContainers > 1.
-      initCommands:
-        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node migrate-prod.cjs
+      # No initCommands — this hello-world schema has zero entities, so Wasp
+      # sets dbClient to null and the API does not use PostgreSQL at runtime.
+      # When you add models, run: cp scripts/migrate-prod.cjs migrate-prod.cjs
+      # in build, deploy it, and add:
+      #   zsc execOnce ${appVersionId} --retryUntilSuccessful -- node migrate-prod.cjs
       ports:
         - port: 3001
           httpSupport: true
       envVariables:
         NODE_ENV: production
+        # Keep for when entities are added; unused while dbClient is null.
         DATABASE_URL: ${db_connectionString}
       start: sh -c 'cd .wasp/out/server && npm run start-production'
 
