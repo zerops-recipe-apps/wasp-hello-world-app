@@ -31,10 +31,11 @@ zerops:
     build:
       base: nodejs@24
       buildCommands:
-        - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
-        - NPM_CONFIG_IGNORE_SCRIPTS=false wasp install
+        - sed -i 's/ignore-scripts=true/ignore-scripts=false/' .npmrc
+        - npm install --min-release-age=0
+        - npx wasp install
         - node scripts/generate-build-env.cjs
-        - wasp build
+        - npx wasp build
         - npm run build:client
       deployFiles:
         - .wasp/out/web-app/build/~
@@ -49,9 +50,10 @@ zerops:
       base: nodejs@24
       os: ubuntu
       buildCommands:
-        - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
-        - NPM_CONFIG_IGNORE_SCRIPTS=false wasp install
-        - wasp build
+        - sed -i 's/ignore-scripts=true/ignore-scripts=false/' .npmrc
+        - npm install --min-release-age=0
+        - npx wasp install
+        - npx wasp build
         - cd .wasp/out/server && npm run bundle
         - cp scripts/migrate-prod.cjs migrate-prod.cjs
       deployFiles:
@@ -87,8 +89,9 @@ zerops:
       base: nodejs@24
       os: ubuntu
       buildCommands:
-        - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
-        - NPM_CONFIG_IGNORE_SCRIPTS=false wasp install
+        - sed -i 's/ignore-scripts=true/ignore-scripts=false/' .npmrc
+        - npm install --min-release-age=0
+        - npx wasp install
       deployFiles: ./
       cache:
         - node_modules
@@ -120,10 +123,10 @@ The API service receives `DATABASE_URL` from `${db_connectionString}` (the manag
 ### 3. Local development
 
 ```bash
-npm install -g @wasp.sh/wasp-cli@0.25.0
-NPM_CONFIG_IGNORE_SCRIPTS=false wasp install
-wasp start db   # optional local Postgres via Wasp
-wasp start      # client :3000, server :3001
+npm install --ignore-scripts=false --min-release-age=0   # or sed flip in .npmrc like Zerops build
+npx wasp install
+npx wasp start db   # optional local Postgres via Wasp
+npx wasp start      # client :3000, server :3001
 ```
 
 Production build locally:

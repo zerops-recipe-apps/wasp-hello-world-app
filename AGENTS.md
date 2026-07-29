@@ -47,7 +47,7 @@ This project uses the Wasp framework.
 ## Notes
 
 - **Zerops runtime base:** `nodejs@24` with **`os: ubuntu`** on `prod-api` — Prisma's native engine fails on Alpine without OpenSSL (`Error load...` / invalid JSON from schema engine). Wasp's own Dockerfile runs `apk add openssl` on Alpine for the same reason.
-- Build commands use `wasp install` (not plain `npm install`) because Wasp 0.25 tracks internal deps; pass `NPM_CONFIG_IGNORE_SCRIPTS=false` to override the repo `.npmrc`.
+- `@wasp.sh/wasp-cli` is a devDependency; build uses `npx wasp` (no global install — npm 12 blocks global allowScripts). Build flips `.npmrc` `ignore-scripts` to `false` before install because Wasp invokes npm with scripts enabled.
 - `REACT_APP_API_URL` is embedded into the client bundle at build time (Wasp 0.25 client env name).
 - `scripts/generate-build-env.cjs` writes `src/build-env.ts` at build time; Vite inlines it into the client bundle.
 - Static assets (logos, favicon, status-page.css) live in `public/` and are copied to the client build output.

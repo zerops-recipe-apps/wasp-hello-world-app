@@ -10,14 +10,16 @@ zerops:
     build:
       base: nodejs@24
       buildCommands:
-        # Install Wasp CLI first, then wasp install (not plain npm install —
-        # Wasp 0.25 tracks internal deps and rejects stale npm-only installs).
-        - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
-        - NPM_CONFIG_IGNORE_SCRIPTS=false wasp install
+        # Wasp CLI is a devDependency — avoid global install (npm 12 blocks allowScripts globally).
+        # Temporarily enable install scripts — Wasp runs npm install internally with --ignore-scripts=false,
+        # which npm 12 rejects when .npmrc has ignore-scripts=true.
+        - sed -i 's/ignore-scripts=true/ignore-scripts=false/' .npmrc
+        - npm install --min-release-age=0
+        - npx wasp install
         # Generate src/build-env.ts with Wasp version, build timestamp,
         # and environment — Vite inlines this into the client bundle.
         - node scripts/generate-build-env.cjs
-        - wasp build
+        - npx wasp build
         - npm run build:client
 
       deployFiles:
@@ -40,9 +42,10 @@ zerops:
       # (see Wasp Dockerfile: apk add openssl on Alpine).
       os: ubuntu
       buildCommands:
-        - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
-        - NPM_CONFIG_IGNORE_SCRIPTS=false wasp install
-        - wasp build
+        - sed -i 's/ignore-scripts=true/ignore-scripts=false/' .npmrc
+        - npm install --min-release-age=0
+        - npx wasp install
+        - npx wasp build
         - cd .wasp/out/server && npm run bundle
         - cp scripts/migrate-prod.cjs migrate-prod.cjs
         - test -x node_modules/.bin/prisma
@@ -89,8 +92,9 @@ zerops:
       base: nodejs@24
       os: ubuntu
       buildCommands:
-        - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
-        - NPM_CONFIG_IGNORE_SCRIPTS=false wasp install
+        - sed -i 's/ignore-scripts=true/ignore-scripts=false/' .npmrc
+        - npm install --min-release-age=0
+        - npx wasp install
       deployFiles: ./
       cache:
         - node_modules

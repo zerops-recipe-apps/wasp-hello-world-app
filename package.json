@@ -28,6 +28,7 @@
     "react-router": "^8.0.1"
   },
   "devDependencies": {
+    "@wasp.sh/wasp-cli": "0.25.0",
     "@types/node": "^24.0.0",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
