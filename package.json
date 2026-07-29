@@ -18,7 +18,7 @@
     "node": ">=24.14.1"
   },
   "scripts": {
-    "build:client": "node scripts/generate-build-env.cjs && vite build",
+    "build:client": "node scripts/build-client.cjs",
     "build": "wasp build && npm run build:client"
   },
   "workspaces": [".wasp/out/*", ".wasp/out/sdk/wasp"],
