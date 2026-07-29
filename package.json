@@ -1,0 +1,49 @@
+{
+  "name": "wasp-hello-world-app",
+  "version": "1.0.0",
+  "description": "Minimal Wasp full-stack demo on Zerops (static React client, Node.js API, PostgreSQL).",
+  "author": "Zerops",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zerops-recipe-apps/wasp-hello-world-app.git"
+  },
+  "homepage": "https://app.zerops.io/recipes/wasp-hello-world",
+  "bugs": {
+    "url": "https://github.com/zerops-recipe-apps/wasp-hello-world-app/issues"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.14.1"
+  },
+  "scripts": {
+    "build:client": "node scripts/build-client.cjs",
+    "build": "wasp build && npm run build:client"
+  },
+  "workspaces": [".wasp/out/*", ".wasp/out/sdk/wasp"],
+  "dependencies": {
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "react-router": "^8.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "prisma": "5.19.1",
+    "typescript": "6.0.3",
+    "vite": "^8.1.0",
+    "vitest": "^4.1.9",
+    "@wasp.sh/spec": "file:.wasp/spec/"
+  },
+  "keywords": [
+    "wasp",
+    "react",
+    "zerops",
+    "nodejs",
+    "postgresql",
+    "full-stack",
+    "hello-world"
+  ]
+}
