@@ -47,6 +47,7 @@ zerops:
   - setup: prod-api
     build:
       base: nodejs@24
+      os: ubuntu
       buildCommands:
         - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
         - NPM_CONFIG_IGNORE_SCRIPTS=false wasp install
@@ -70,6 +71,7 @@ zerops:
           path: /
     run:
       base: nodejs@24
+      os: ubuntu
       initCommands:
         - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node migrate-prod.cjs
       ports:

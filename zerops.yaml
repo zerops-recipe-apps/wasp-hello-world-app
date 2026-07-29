@@ -36,6 +36,9 @@ zerops:
   - setup: prod-api
     build:
       base: nodejs@24
+      # Ubuntu — Prisma migrate needs OpenSSL; Alpine defaults break the engine
+      # (see Wasp Dockerfile: apk add openssl on Alpine).
+      os: ubuntu
       buildCommands:
         - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
         - NPM_CONFIG_IGNORE_SCRIPTS=false wasp install
@@ -66,6 +69,7 @@ zerops:
 
     run:
       base: nodejs@24
+      os: ubuntu
       # zsc execOnce runs Prisma migrate deploy exactly once per
       # app version — safe when minContainers > 1.
       initCommands:
