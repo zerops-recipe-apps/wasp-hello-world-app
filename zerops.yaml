@@ -1,0 +1,100 @@
+# yaml-language-server: $schema=https://api.app-prg1.zerops.io/api/rest/public/settings/zerops-yaml-json-schema.json
+# The 'prod-client' setup builds the Wasp React SPA for Nginx serving.
+# The 'prod-api' setup runs the bundled Node.js server with Prisma migrations.
+# The 'dev' setup deploys full source code for live development via SSH.
+zerops:
+  # Production client: compiles the Wasp React SPA into static
+  # assets for Nginx. Requires REACT_APP_API_URL at build time so
+  # the bundle points at the co-deployed API service.
+  - setup: prod-client
+    build:
+      base: nodejs@24
+      buildCommands:
+        # Wasp and Prisma need install scripts — override the repo
+        # .npmrc ignore-scripts default for the build container only.
+        - npm install --ignore-scripts=false
+        - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
+        # Generate src/build-env.ts with Wasp version, build timestamp,
+        # and environment — Vite inlines this into the client bundle.
+        - node scripts/generate-build-env.cjs
+        - wasp build
+        - npm run build:client
+
+      deployFiles:
+        # Strip build/ prefix — contents become the Nginx document root.
+        - .wasp/out/web-app/build/~
+
+      cache:
+        - node_modules
+        - .wasp/out
+
+    run:
+      base: static
+
+  # Production API: Wasp Node.js server with Prisma. Deploys the
+  # pre-bundled Express app from .wasp/out/server/bundle/.
+  - setup: prod-api
+    build:
+      base: nodejs@24
+      buildCommands:
+        - npm install --ignore-scripts=false
+        - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
+        - wasp build
+        - cd .wasp/out/server && npm run bundle
+
+      deployFiles:
+        # Root node_modules carries @prisma/client for migrations.
+        - node_modules
+        - .wasp/out/server/bundle
+        - .wasp/out/server/node_modules
+        - .wasp/out/server/package*.json
+        - .wasp/out/db
+
+      cache:
+        - node_modules
+        - .wasp/out
+
+    deploy:
+      readinessCheck:
+        httpGet:
+          port: 3001
+          path: /
+
+    run:
+      base: nodejs@24
+      # zsc execOnce runs Prisma migrate deploy exactly once per
+      # app version — safe when minContainers > 1.
+      initCommands:
+        - zsc execOnce ${appVersionId} -- sh -c 'cd .wasp/out/server && npm run db-migrate-prod'
+      ports:
+        - port: 3001
+          httpSupport: true
+      envVariables:
+        NODE_ENV: production
+        DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/db
+      start: sh -c 'cd .wasp/out/server && npm run start-production'
+
+  # Dev setup: deploys full source so a developer or agent can SSH
+  # in and run `wasp start` (client :3000, server :3001).
+  - setup: dev
+    build:
+      base: nodejs@24
+      os: ubuntu
+      buildCommands:
+        - npm install --ignore-scripts=false
+        - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
+      deployFiles: ./
+      cache:
+        - node_modules
+
+    run:
+      base: nodejs@24
+      os: ubuntu
+      ports:
+        - port: 3000
+          httpSupport: true
+        - port: 3001
+          httpSupport: true
+      envVariables:
+        DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/db
+      start: zsc noop --silent
