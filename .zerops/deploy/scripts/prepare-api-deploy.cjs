@@ -125,8 +125,8 @@ copyIfExists(
   path.join(deployServer, "package-lock.json"),
 );
 
-// Isolated prod install in deploy tree (not a workspace) — pulls in @wasp.sh/* from file: tgz.
-execSync("npm install --omit=dev --workspaces=false", {
+// Fresh prod install — avoids .bin shims (nodemon, semver) pointing outside deploy.
+execSync("npm install --omit=dev", {
   cwd: deployServer,
   stdio: "inherit",
   env: npmEnv,
@@ -153,11 +153,7 @@ fs.writeFileSync(
   `${JSON.stringify(runtimePkg, null, 2)}\n`,
 );
 
-execSync("npm install --omit=dev --workspaces=false", {
-  cwd: deploy,
-  stdio: "inherit",
-  env: npmEnv,
-});
+execSync("npm install --omit=dev", { cwd: deploy, stdio: "inherit", env: npmEnv });
 execSync(`npx prisma generate --schema=${schema}`, {
   cwd: deploy,
   stdio: "inherit",
@@ -171,11 +167,5 @@ if (removedLinks > 0) {
   );
 }
 assertNoExternalSymlinks();
-
-requirePath(
-  path.join(
-    ".zerops/deploy/.wasp/out/server/node_modules/@wasp.sh/lib-auth/package.json",
-  ),
-);
 
 console.log("prepare-api-deploy: ready at .zerops/deploy/");

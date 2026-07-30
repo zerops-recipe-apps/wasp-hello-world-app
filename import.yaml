@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://api.app-prg1.zerops.io/api/rest/public/settings/import-project-yaml-json-schema.json
-#yamlPreprocessor=on
+#zeropsPreprocessor=on
 
 # Wasp hello world — small production environment.
 # Import once to create the project, or import services/env to an existing project.
@@ -30,8 +30,12 @@ services:
     verticalAutoscaling:
       minRam: 0.5
       minFreeRamGB: 0.25
+    # Belt-and-suspenders: Wasp requires these on the API at runtime (CORS + auth).
+    envVariables:
+      WASP_SERVER_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
+      WASP_WEB_CLIENT_URL: https://client-${zeropsSubdomainHost}.prg1.zerops.app
 
   - hostname: db
     type: postgresql:single@16
-    profile: oltp-staging
+    profile: oltp-production
     priority: 10

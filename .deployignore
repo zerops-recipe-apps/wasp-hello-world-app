@@ -1,9 +1,8 @@
-# Wasp build-only — targets are not in deployFiles (duplicate/conflict with .wasp/out/*).
-node_modules/wasp
+# Wasp CLI/dev-only at the repo root (dev setup deployFiles: ./).
+# Do NOT use bare `node_modules/@wasp.sh` — it also matches
+# `.zerops/deploy/.../node_modules/@wasp.sh` and strips lib-auth from prod-api.
 /node_modules/wasp
-node_modules/.bin/wasp
-node_modules/.bin/__internal_wasp*
 /node_modules/.bin/wasp
 /node_modules/.bin/__internal_wasp*
-node_modules/@wasp.sh
-/node_modules/@wasp.sh
+/node_modules/@wasp.sh/wasp-cli
+/node_modules/@wasp.sh/spec

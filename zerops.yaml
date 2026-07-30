@@ -10,16 +10,13 @@ zerops:
     build:
       base: nodejs@24
       buildCommands:
-        - NPM_CONFIG_PRODUCTION=false NPM_CONFIG_ENGINE_STRICT=false NPM_CONFIG_AUDIT=false npm install --min-release-age=0
+        - npm install --min-release-age=0
         - npx wasp install
-        # Generate src/build-env.ts with Wasp version, build timestamp,
-        # and environment — Vite inlines this into the client bundle.
-        - node scripts/generate-build-env.cjs
         - npx wasp build
-        # build:client copies Wasp's 200.html → index.html for Nginx.
         - npm run build:client
       envVariables:
         RUNTIME_APP_ENV: production
+        REACT_APP_API_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
 
       deployFiles:
         # Strip build/ prefix — index.html + assets become the Nginx docroot.
@@ -32,8 +29,8 @@ zerops:
     run:
       base: static
 
-  # Production API — MINIMAL debug setup: build, bundle, deploy server only.
-  # No migrate/seed init; add those back after deploy succeeds.
+  # Production API: bundle via scripts/bundle-server.sh, clean deploy tree
+  # (prepare-api-deploy.cjs — same idea as nextjs-ssr migrate.cjs / nestjs dist+node_modules).
   - setup: prod-api
     build:
       base: nodejs@24
@@ -42,33 +39,45 @@ zerops:
         - NPM_CONFIG_PRODUCTION=false NPM_CONFIG_ENGINE_STRICT=false NPM_CONFIG_AUDIT=false npm install --min-release-age=0
         - npx wasp install
         - npx wasp build
-        # Bundle needs devDeps (tsc, rollup) — install full, bundle, then prune.
-        - cd .wasp/out/server && NPM_CONFIG_AUDIT=false NPM_CONFIG_ENGINE_STRICT=false npm install
-        - cd .wasp/out/server && npm run bundle
-        - cd .wasp/out/server && npm prune --omit=dev
-        - test -f .wasp/out/server/bundle/server.js
+        - cp -R migrations/. .wasp/out/db/migrations/
+        - sh scripts/bundle-server.sh
+        - node scripts/prepare-api-deploy.cjs
+        - test -f .zerops/deploy/.wasp/out/server/bundle/server.js
+        - test -d .zerops/deploy/.wasp/out/server/node_modules/@wasp.sh/lib-auth
+        - test -d .zerops/deploy/node_modules/prisma
 
       deployFiles:
-        - .wasp/out/server/bundle
-        - .wasp/out/server/node_modules
-        - .wasp/out/server/package.json
-        - .wasp/out/libs
+        - .zerops/deploy/~
 
       cache:
         - node_modules
         - .wasp/out
 
+    deploy:
+      readinessCheck:
+        httpGet:
+          port: 3001
+          path: /auth/me
+
     run:
       base: nodejs@24
       os: ubuntu
+      initCommands:
+        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node scripts/migrate-prod.cjs
+        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node scripts/seed-demo-user.cjs
       ports:
         - port: 3001
           httpSupport: true
       envVariables:
         NODE_ENV: production
+        PORT: 3001
         DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/${db_dbName}
+        ZEROPS_DB_NAME: ${db_dbName}
         JWT_SECRET: wasp-zerops-hello-world-demo-jwt-v1
-      start: sh -c 'cd .wasp/out/server && node --enable-source-maps bundle/server.js'
+        # Wasp 0.25 prod server env (see wasp.sh/docs/deployment/env-vars).
+        WASP_SERVER_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
+        WASP_WEB_CLIENT_URL: https://client-${zeropsSubdomainHost}.prg1.zerops.app
+      start: sh -c 'cd .wasp/out/server && NODE_ENV=production node --enable-source-maps bundle/server.js'
 
   # Dev setup: deploys full source so a developer or agent can SSH
   # in and run `wasp start` (client :3000, server :3001).

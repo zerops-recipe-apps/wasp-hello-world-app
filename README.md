@@ -54,29 +54,37 @@ zerops:
         - NPM_CONFIG_PRODUCTION=false NPM_CONFIG_ENGINE_STRICT=false NPM_CONFIG_AUDIT=false npm install --min-release-age=0
         - npx wasp install
         - npx wasp build
-        # Full install before bundle (tsc/rollup/@tsconfig/node24 are devDeps), prune after.
-        - cd .wasp/out/server && NPM_CONFIG_AUDIT=false NPM_CONFIG_ENGINE_STRICT=false npm install
-        - cd .wasp/out/server && npm run bundle
-        - cd .wasp/out/server && npm prune --omit=dev
+        - cp -R migrations/. .wasp/out/db/migrations/
+        - sh scripts/bundle-server.sh
+        - node scripts/prepare-api-deploy.cjs
       deployFiles:
-        - .wasp/out/server/bundle
-        - .wasp/out/server/node_modules
-        - .wasp/out/server/package.json
-        - .wasp/out/libs
+        - .zerops/deploy/~
       cache:
         - node_modules
         - .wasp/out
+    deploy:
+      readinessCheck:
+        httpGet:
+          port: 3001
+          path: /auth/me
+        failureTimeout: 5m0s
+        retryPeriod: 10s
     run:
       base: nodejs@24
       os: ubuntu
+      initCommands:
+        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node scripts/migrate-prod.cjs
+        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node scripts/seed-demo-user.cjs
       ports:
         - port: 3001
           httpSupport: true
       envVariables:
         NODE_ENV: production
+        PORT: 3001
         DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/${db_dbName}
+        ZEROPS_DB_NAME: ${db_dbName}
         JWT_SECRET: wasp-zerops-hello-world-demo-jwt-v1
-      start: sh -c 'cd .wasp/out/server && node --enable-source-maps bundle/server.js'
+      start: sh -c 'cd .wasp/out/server && NODE_ENV=production node --enable-source-maps bundle/server.js'
 
   - setup: dev
     build:
@@ -108,12 +116,12 @@ Set these at the **project** level in your recipe `import.yaml` (see [Wasp self-
 | Variable | Service | Purpose |
 |----------|---------|---------|
 | `REACT_APP_API_URL` | client (`prod-client`) | Baked into the SPA at build time |
-| `WASP_SERVER_URL` | API (`prod-api`) | Public URL of the API (port 3001) |
-| `WASP_WEB_CLIENT_URL` | API (`prod-api`) | Public URL of the static client |
+| `WASP_SERVER_URL` | API (`prod-api`) | Public URL of the API (port 3001) — project env in `import.yaml`, auto-inherited |
+| `WASP_WEB_CLIENT_URL` | API (`prod-api`) | Public URL of the static client — project env in `import.yaml`, auto-inherited |
 
 Demo login (seeded on deploy): **username** `demo`, **password** `demo-zerops`. The home page requires auth; unauthenticated users are redirected to `/login`.
 
-The API service receives `DATABASE_URL` from `${db_connectionString}` and runs `migrate-prod.cjs` plus `seed-demo-user.cjs` on deploy.
+The API service receives `DATABASE_URL` from `${db_*}` placeholders and runs `migrate-prod.cjs` plus `seed-demo-user.cjs` on deploy. If the API returns 502, verify `WASP_SERVER_URL` and `WASP_WEB_CLIENT_URL` exist on the project (re-import `import.yaml` env if needed).
 
 ### 3. Local development
 
