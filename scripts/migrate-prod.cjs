@@ -3,7 +3,7 @@
 const { spawnSync } = require('child_process');
 const { existsSync, readdirSync } = require('fs');
 const path = require('path');
-const { resolveDatabaseUrl } = require('./database-url.cjs');
+const { resolveDatabaseUrl } = require(path.join(__dirname, 'database-url.cjs'));
 
 const root = process.cwd();
 const schema = path.join(root, '.wasp/out/db/schema.prisma');

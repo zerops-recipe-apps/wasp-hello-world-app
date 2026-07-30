@@ -47,17 +47,16 @@ zerops:
         - npx wasp build
         - cp -R migrations/. .wasp/out/db/migrations/
         - cd .wasp/out/server && npm run bundle
-        - cp scripts/migrate-prod.cjs migrate-prod.cjs
-        - cp scripts/database-url.cjs database-url.cjs
-        - cp scripts/seed-demo-user.cjs seed-demo-user.cjs
+        # Drop Wasp CLI symlinks — deploy target is missing from deployFiles.
+        - rm -f node_modules/wasp node_modules/.bin/wasp
         - test -d .wasp/out/db/migrations
         - test -f .wasp/out/server/bundle/server.js
 
       deployFiles:
         - node_modules
-        - migrate-prod.cjs
-        - database-url.cjs
-        - seed-demo-user.cjs
+        - scripts/migrate-prod.cjs
+        - scripts/database-url.cjs
+        - scripts/seed-demo-user.cjs
         - .wasp/out/server/bundle
         - .wasp/out/server/node_modules
         - .wasp/out/server/package.json
@@ -77,8 +76,8 @@ zerops:
       base: nodejs@24
       os: ubuntu
       initCommands:
-        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node migrate-prod.cjs
-        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node seed-demo-user.cjs
+        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node scripts/migrate-prod.cjs
+        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node scripts/seed-demo-user.cjs
       ports:
         - port: 3001
           httpSupport: true

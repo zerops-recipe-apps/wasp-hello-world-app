@@ -1,0 +1,4 @@
+# Wasp CLI symlink — build-only; target (.wasp/out/sdk/wasp) is not deployed.
+node_modules/wasp
+node_modules/.bin/wasp
+node_modules/@wasp.sh/wasp-cli

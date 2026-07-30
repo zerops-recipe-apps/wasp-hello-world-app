@@ -1,6 +1,7 @@
 // Seeds the predefined demo user on Zerops after migrations.
 // Idempotent — safe to run on every deploy via zsc execOnce.
-const { resolveDatabaseUrl } = require("./database-url.cjs");
+const path = require("path");
+const { resolveDatabaseUrl } = require(path.join(__dirname, "database-url.cjs"));
 
 const DEMO_USERNAME = "demo";
 const DEMO_PASSWORD = "demo-zerops";
