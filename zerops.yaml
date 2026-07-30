@@ -32,63 +32,40 @@ zerops:
     run:
       base: static
 
-  # Production API: Wasp Node.js server with Prisma. Deploys the
-  # pre-bundled Express app from .wasp/out/server/bundle/.
+  # Production API — MINIMAL debug setup: build, bundle, deploy server only.
+  # No migrate/seed init; add those back after deploy succeeds.
   - setup: prod-api
     build:
       base: nodejs@24
-      # Ubuntu — Prisma migrate needs OpenSSL; Alpine defaults break the engine
-      # (see Wasp Dockerfile: apk add openssl on Alpine).
       os: ubuntu
       buildCommands:
-        # Install devDependencies too — prisma CLI lives there and is needed at runtime init.
         - NPM_CONFIG_PRODUCTION=false NPM_CONFIG_ENGINE_STRICT=false NPM_CONFIG_AUDIT=false npm install --min-release-age=0
         - npx wasp install
         - npx wasp build
-        - cp -R migrations/. .wasp/out/db/migrations/
-        - cd .wasp/out/server && npm run bundle
-        - node scripts/prepare-api-deploy.cjs
-        - test -f .zerops/deploy/.wasp/out/server/bundle/server.js
-        - test -f .zerops/deploy/node_modules/.bin/prisma
+        - cd .wasp/out/server && NPM_CONFIG_AUDIT=false npm install --omit=dev && npm run bundle
+        - test -f .wasp/out/server/bundle/server.js
 
       deployFiles:
-        - .zerops/deploy/~
+        - .wasp/out/server/bundle
+        - .wasp/out/server/node_modules
+        - .wasp/out/server/package.json
+        - .wasp/out/libs
 
       cache:
         - node_modules
         - .wasp/out
 
-    deploy:
-      readinessCheck:
-        httpGet:
-          port: 3001
-          path: /auth/me
-        failureTimeout: 300
-        retryPeriod: 10
-
     run:
       base: nodejs@24
       os: ubuntu
-      initCommands:
-        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node scripts/migrate-prod.cjs
-        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node scripts/seed-demo-user.cjs
       ports:
         - port: 3001
           httpSupport: true
       envVariables:
         NODE_ENV: production
-        # Explicit db name — ${db_connectionString} can target the "postgres"
-        # maintenance DB where the app user lacks CREATE on schema public (PG 15+).
         DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/${db_dbName}
-        ZEROPS_DB_NAME: ${db_dbName}
-        # Demo-only fixed secret — zero manual setup on redeploy. Wasp requires
-        # JWT_SECRET in production; do not reuse this value outside this recipe.
         JWT_SECRET: wasp-zerops-hello-world-demo-jwt-v1
-      # Migrations run in initCommands — start the bundled server directly.
-      # start-production re-runs prisma migrate deploy, but prisma lives in root
-      # node_modules (not .wasp/out/server), and JWT/env validation happens only
-      # after that redundant step.
-      start: sh -c 'cd .wasp/out/server && NODE_ENV=production node --enable-source-maps bundle/server.js'
+      start: sh -c 'cd .wasp/out/server && node --enable-source-maps bundle/server.js'
 
   # Dev setup: deploys full source so a developer or agent can SSH
   # in and run `wasp start` (client :3000, server :3001).
