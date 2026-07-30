@@ -47,8 +47,10 @@ zerops:
         - npx wasp build
         - cp -R migrations/. .wasp/out/db/migrations/
         - cd .wasp/out/server && npm run bundle
-        # Drop Wasp CLI symlinks — deploy target is missing from deployFiles.
-        - rm -f node_modules/wasp node_modules/.bin/wasp
+        # Strip Wasp dev symlinks before packaging — they point at .wasp/out/*
+        # which is also listed in deployFiles and breaks artifact creation.
+        - rm -rf node_modules/@wasp.sh node_modules/wasp
+        - rm -f node_modules/.bin/wasp node_modules/.bin/__internal_wasp*
         - test -d .wasp/out/db/migrations
         - test -f .wasp/out/server/bundle/server.js
 
