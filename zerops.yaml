@@ -47,22 +47,12 @@ zerops:
         - npx wasp build
         - cp -R migrations/. .wasp/out/db/migrations/
         - cd .wasp/out/server && npm run bundle
-        # Strip Wasp dev symlinks before packaging — they point at .wasp/out/*
-        # which is also listed in deployFiles and breaks artifact creation.
-        - rm -rf node_modules/@wasp.sh node_modules/wasp
-        - rm -f node_modules/.bin/wasp node_modules/.bin/__internal_wasp*
-        - test -d .wasp/out/db/migrations
-        - test -f .wasp/out/server/bundle/server.js
+        - node scripts/prepare-api-deploy.cjs
+        - test -f .zerops/deploy/.wasp/out/server/bundle/server.js
+        - test -f .zerops/deploy/node_modules/.bin/prisma
 
       deployFiles:
-        - node_modules
-        - scripts/migrate-prod.cjs
-        - scripts/database-url.cjs
-        - scripts/seed-demo-user.cjs
-        - .wasp/out/server/bundle
-        - .wasp/out/server/node_modules
-        - .wasp/out/server/package.json
-        - .wasp/out/db
+        - .zerops/deploy/~
 
       cache:
         - node_modules
@@ -72,7 +62,9 @@ zerops:
       readinessCheck:
         httpGet:
           port: 3001
-          path: /
+          path: /auth/me
+        failureTimeout: 300
+        retryPeriod: 10
 
     run:
       base: nodejs@24
