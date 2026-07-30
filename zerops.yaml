@@ -10,10 +10,6 @@ zerops:
     build:
       base: nodejs@24
       buildCommands:
-        # Wasp CLI is a devDependency — avoid global install (npm 12 blocks allowScripts globally).
-        # Temporarily enable install scripts — Wasp runs npm install internally with --ignore-scripts=false,
-        # which npm 12 rejects when .npmrc has ignore-scripts=true.
-        - sed -i 's/ignore-scripts=true/ignore-scripts=false/' .npmrc
         - npm install --min-release-age=0
         - npx wasp install
         # Generate src/build-env.ts with Wasp version, build timestamp,
@@ -22,6 +18,8 @@ zerops:
         - npx wasp build
         # build:client copies Wasp's 200.html → index.html for Nginx.
         - npm run build:client
+      envVariables:
+        RUNTIME_APP_ENV: production
 
       deployFiles:
         # Strip build/ prefix — index.html + assets become the Nginx docroot.
@@ -43,15 +41,18 @@ zerops:
       # (see Wasp Dockerfile: apk add openssl on Alpine).
       os: ubuntu
       buildCommands:
-        - sed -i 's/ignore-scripts=true/ignore-scripts=false/' .npmrc
         - npm install --min-release-age=0
         - npx wasp install
         - npx wasp build
         - cd .wasp/out/server && npm run bundle
+        - cp scripts/migrate-prod.cjs migrate-prod.cjs
+        - cp scripts/seed-demo-user.cjs seed-demo-user.cjs
         - test -d .wasp/out/db/migrations
 
       deployFiles:
         - node_modules
+        - migrate-prod.cjs
+        - seed-demo-user.cjs
         - .wasp/out/server/bundle
         - .wasp/out/server/node_modules
         - .wasp/out/server/package.json
@@ -70,17 +71,14 @@ zerops:
     run:
       base: nodejs@24
       os: ubuntu
-      # No initCommands — this hello-world schema has zero entities, so Wasp
-      # sets dbClient to null and the API does not use PostgreSQL at runtime.
-      # When you add models, run: cp scripts/migrate-prod.cjs migrate-prod.cjs
-      # in build, deploy it, and add:
-      #   zsc execOnce ${appVersionId} --retryUntilSuccessful -- node migrate-prod.cjs
+      initCommands:
+        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node migrate-prod.cjs
+        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node seed-demo-user.cjs
       ports:
         - port: 3001
           httpSupport: true
       envVariables:
         NODE_ENV: production
-        # Keep for when entities are added; unused while dbClient is null.
         DATABASE_URL: ${db_connectionString}
       start: sh -c 'cd .wasp/out/server && npm run start-production'
 
@@ -91,7 +89,6 @@ zerops:
       base: nodejs@24
       os: ubuntu
       buildCommands:
-        - sed -i 's/ignore-scripts=true/ignore-scripts=false/' .npmrc
         - npm install --min-release-age=0
         - npx wasp install
       deployFiles: ./

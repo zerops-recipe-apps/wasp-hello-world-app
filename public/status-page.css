@@ -204,6 +204,64 @@ h1 {
   border-color: rgba(239, 68, 68, 0.35);
 }
 
+.auth-card {
+  width: min(100%, 420px);
+}
+
+.demo-credentials {
+  margin-bottom: 1.25rem;
+}
+
+.demo-credentials-label {
+  margin-bottom: 0.65rem;
+  color: #8b98ab;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.auth-form {
+  margin-top: 0.5rem;
+}
+
+.page-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.signed-in-as {
+  color: #94a3b8;
+  font-size: 0.88rem;
+}
+
+.signed-in-as strong {
+  color: #f8fafc;
+  font-weight: 600;
+}
+
+.btn-logout {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: #e2e8f0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.btn-logout:hover {
+  border-color: rgba(245, 200, 66, 0.45);
+  background: rgba(245, 200, 66, 0.08);
+}
+
 @media (max-width: 520px) {
   .card {
     padding: 1.35rem;

@@ -1,7 +1,7 @@
 {
   "name": "wasp-hello-world-app",
   "version": "1.0.0",
-  "description": "Minimal Wasp full-stack demo on Zerops (static React client, Node.js API, PostgreSQL).",
+  "description": "Minimal Wasp full-stack demo on Zerops — React client, Node.js API, PostgreSQL, Prisma query, and sample username auth.",
   "author": "Zerops",
   "license": "MIT",
   "repository": {

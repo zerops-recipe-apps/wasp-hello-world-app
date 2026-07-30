@@ -1,7 +1,7 @@
 # Wasp Hello World Recipe App
 
 <!-- #ZEROPS_EXTRACT_START:intro# -->
-A minimal [Wasp](https://wasp.sh/) full-stack application — React client, Node.js server, and PostgreSQL — deployed on [Zerops](https://zerops.io) as separate static and API services with Prisma migrations.
+A minimal [Wasp](https://wasp.sh/) full-stack application — React client, Node.js API, PostgreSQL, and a Prisma query — deployed on [Zerops](https://zerops.io) as separate static and API services.
 <!-- #ZEROPS_EXTRACT_END:intro# -->
 
 Used within [Wasp Hello World recipe](https://app.zerops.io/recipes/wasp-hello-world) for [Zerops](https://zerops.io) platform.
@@ -23,7 +23,7 @@ The main application configuration file you place at the root of your repository
 Wasp deploys as **two production services** from one repo:
 
 - `prod-client` — builds the React SPA (`wasp build` + `vite build`) and serves static assets via Nginx.
-- `prod-api` — runs the bundled Node.js server from `.wasp/out/server/bundle/` with Prisma migrations.
+- `prod-api` — runs the bundled Node.js server from `.wasp/out/server/bundle/` and applies Prisma migrations on deploy.
 
 ```yaml
 zerops:
@@ -31,12 +31,13 @@ zerops:
     build:
       base: nodejs@24
       buildCommands:
-        - sed -i 's/ignore-scripts=true/ignore-scripts=false/' .npmrc
         - npm install --min-release-age=0
         - npx wasp install
         - node scripts/generate-build-env.cjs
         - npx wasp build
         - npm run build:client
+      envVariables:
+        RUNTIME_APP_ENV: production
       deployFiles:
         - .wasp/out/web-app/build/~
       cache:
@@ -50,13 +51,14 @@ zerops:
       base: nodejs@24
       os: ubuntu
       buildCommands:
-        - sed -i 's/ignore-scripts=true/ignore-scripts=false/' .npmrc
         - npm install --min-release-age=0
         - npx wasp install
         - npx wasp build
         - cd .wasp/out/server && npm run bundle
+        - cp scripts/migrate-prod.cjs migrate-prod.cjs
       deployFiles:
         - node_modules
+        - migrate-prod.cjs
         - .wasp/out/server/bundle
         - .wasp/out/server/node_modules
         - .wasp/out/server/package.json
@@ -72,6 +74,8 @@ zerops:
     run:
       base: nodejs@24
       os: ubuntu
+      initCommands:
+        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node migrate-prod.cjs
       ports:
         - port: 3001
           httpSupport: true
@@ -85,7 +89,6 @@ zerops:
       base: nodejs@24
       os: ubuntu
       buildCommands:
-        - sed -i 's/ignore-scripts=true/ignore-scripts=false/' .npmrc
         - npm install --min-release-age=0
         - npx wasp install
       deployFiles: ./
@@ -114,15 +117,19 @@ Set these at the **project** level in your recipe `import.yaml` (see [Wasp self-
 | `WASP_SERVER_URL` | API (`prod-api`) | Public URL of the API (port 3001) |
 | `WASP_WEB_CLIENT_URL` | API (`prod-api`) | Public URL of the static client |
 
-The API service receives `DATABASE_URL` from `${db_connectionString}` when you add Prisma entities; the hello-world schema has none, so no runtime migration runs.
+Demo login (seeded on deploy): **username** `demo`, **password** `demo-zerops`. The home page requires auth; unauthenticated users are redirected to `/login`.
+
+The API service receives `DATABASE_URL` from `${db_connectionString}` and runs `migrate-prod.cjs` plus `seed-demo-user.cjs` on deploy.
 
 ### 3. Local development
 
 ```bash
-npm install --ignore-scripts=false --min-release-age=0   # or sed flip in .npmrc like Zerops build
+npm install --min-release-age=0
 npx wasp install
 npx wasp start db   # optional local Postgres via Wasp
-npx wasp start      # client :3000, server :3001
+npx wasp db migrate-dev
+npx wasp db seed seedDemoUser
+npx wasp start      # client :3000, server :3001 — sign in with demo / demo-zerops
 ```
 
 Production build locally:
