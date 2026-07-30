@@ -57,6 +57,7 @@ zerops:
         - migrate-prod.cjs
         - database-url.cjs
         - seed-demo-user.cjs
+        - .wasp/out/sdk/wasp
         - .wasp/out/server/bundle
         - .wasp/out/server/node_modules
         - .wasp/out/server/package.json
