@@ -1,8 +1,14 @@
 // Seeds the predefined demo user on Zerops after migrations.
 // Idempotent — safe to run on every deploy via zsc execOnce.
 const { resolveDatabaseUrl } = require("./database-url.cjs");
+
 const DEMO_USERNAME = "demo";
 const DEMO_PASSWORD = "demo-zerops";
+// Argon2 hash for "demo-zerops" (Wasp @wasp.sh/lib-auth / username provider format).
+const DEMO_PROVIDER_DATA = JSON.stringify({
+  hashedPassword:
+    "$argon2id$v=19$m=19456,t=2,p=1$yhCB1BCbCegdKdPDKSm04A$if6PbSBu4J38cn83Yse+e3vLNksIxkR5AcIghHo/7V0",
+});
 
 const MAX_DB_ATTEMPTS = 60;
 const RETRY_DELAY_MS = 2000;
@@ -37,9 +43,7 @@ async function main() {
 
   resolveDatabaseUrl();
 
-  const { sanitizeAndSerializeProviderData } = await import("wasp/server/auth");
   const { PrismaClient } = await import("@prisma/client");
-
   const prisma = new PrismaClient();
 
   try {
@@ -65,9 +69,7 @@ async function main() {
               create: {
                 providerName: "username",
                 providerUserId: DEMO_USERNAME,
-                providerData: await sanitizeAndSerializeProviderData({
-                  hashedPassword: DEMO_PASSWORD,
-                }),
+                providerData: DEMO_PROVIDER_DATA,
               },
             },
           },

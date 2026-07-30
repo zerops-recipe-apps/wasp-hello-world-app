@@ -10,7 +10,7 @@ zerops:
     build:
       base: nodejs@24
       buildCommands:
-        - npm install --min-release-age=0
+        - NPM_CONFIG_PRODUCTION=false NPM_CONFIG_ENGINE_STRICT=false NPM_CONFIG_AUDIT=false npm install --min-release-age=0
         - npx wasp install
         # Generate src/build-env.ts with Wasp version, build timestamp,
         # and environment — Vite inlines this into the client bundle.
@@ -42,7 +42,7 @@ zerops:
       os: ubuntu
       buildCommands:
         # Install devDependencies too — prisma CLI lives there and is needed at runtime init.
-        - NPM_CONFIG_PRODUCTION=false npm install --min-release-age=0
+        - NPM_CONFIG_PRODUCTION=false NPM_CONFIG_ENGINE_STRICT=false NPM_CONFIG_AUDIT=false npm install --min-release-age=0
         - npx wasp install
         - npx wasp build
         - cp -R migrations/. .wasp/out/db/migrations/
@@ -51,13 +51,13 @@ zerops:
         - cp scripts/database-url.cjs database-url.cjs
         - cp scripts/seed-demo-user.cjs seed-demo-user.cjs
         - test -d .wasp/out/db/migrations
+        - test -f .wasp/out/server/bundle/server.js
 
       deployFiles:
         - node_modules
         - migrate-prod.cjs
         - database-url.cjs
         - seed-demo-user.cjs
-        - .wasp/out/sdk/wasp
         - .wasp/out/server/bundle
         - .wasp/out/server/node_modules
         - .wasp/out/server/package.json
