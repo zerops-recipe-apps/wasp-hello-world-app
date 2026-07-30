@@ -10,7 +10,7 @@ Used within [Wasp Hello World recipe](https://app.zerops.io/recipes/wasp-hello-w
 
 [![Deploy on Zerops](https://github.com/zeropsio/recipe-shared-assets/blob/main/deploy-button/light/deploy-button.svg)](https://app.zerops.io/recipes/wasp-hello-world?environment=small-production)
 
-![react cover](https://github.com/zeropsio/recipe-shared-assets/blob/main/covers/svg/cover-react.svg)
+![wasp cover](https://github.com/zerops-recipe-apps/wasp-hello-world-app/blob/main/docs/cover-wasp.svg)
 
 ## Integration Guide
 
