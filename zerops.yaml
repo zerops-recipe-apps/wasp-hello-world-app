@@ -87,7 +87,11 @@ zerops:
         # maintenance DB where the app user lacks CREATE on schema public (PG 15+).
         DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/${db_dbName}
         ZEROPS_DB_NAME: ${db_dbName}
-      start: sh -c 'cd .wasp/out/server && npm run start-production'
+      # Migrations run in initCommands — start the bundled server directly.
+      # start-production re-runs prisma migrate deploy, but prisma lives in root
+      # node_modules (not .wasp/out/server), and JWT/env validation happens only
+      # after that redundant step.
+      start: sh -c 'cd .wasp/out/server && NODE_ENV=production node --enable-source-maps bundle/server.js'
 
   # Dev setup: deploys full source so a developer or agent can SSH
   # in and run `wasp start` (client :3000, server :3001).
