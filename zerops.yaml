@@ -87,6 +87,9 @@ zerops:
         # maintenance DB where the app user lacks CREATE on schema public (PG 15+).
         DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/${db_dbName}
         ZEROPS_DB_NAME: ${db_dbName}
+        # Demo-only fixed secret — zero manual setup on redeploy. Wasp requires
+        # JWT_SECRET in production; do not reuse this value outside this recipe.
+        JWT_SECRET: wasp-zerops-hello-world-demo-jwt-v1
       # Migrations run in initCommands — start the bundled server directly.
       # start-production re-runs prisma migrate deploy, but prisma lives in root
       # node_modules (not .wasp/out/server), and JWT/env validation happens only

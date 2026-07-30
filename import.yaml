@@ -9,9 +9,6 @@ project:
     REACT_APP_API_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
     WASP_SERVER_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
     WASP_WEB_CLIENT_URL: https://client-${zeropsSubdomainHost}.prg1.zerops.app
-  envSecrets:
-    # Required by Wasp in production — without it the API exits on startup (502).
-    JWT_SECRET: <@generateRandomString(<64>)>
 
 services:
   - hostname: client
