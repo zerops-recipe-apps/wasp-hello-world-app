@@ -41,9 +41,11 @@ zerops:
       # (see Wasp Dockerfile: apk add openssl on Alpine).
       os: ubuntu
       buildCommands:
-        - npm install --min-release-age=0
+        # Install devDependencies too — prisma CLI lives there and is needed at runtime init.
+        - NPM_CONFIG_PRODUCTION=false npm install --min-release-age=0
         - npx wasp install
         - npx wasp build
+        - cp -R migrations/. .wasp/out/db/migrations/
         - cd .wasp/out/server && npm run bundle
         - cp scripts/migrate-prod.cjs migrate-prod.cjs
         - cp scripts/seed-demo-user.cjs seed-demo-user.cjs
