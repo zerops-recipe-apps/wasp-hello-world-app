@@ -51,38 +51,32 @@ zerops:
       base: nodejs@24
       os: ubuntu
       buildCommands:
-        - npm install --min-release-age=0
+        - NPM_CONFIG_PRODUCTION=false NPM_CONFIG_ENGINE_STRICT=false NPM_CONFIG_AUDIT=false npm install --min-release-age=0
         - npx wasp install
         - npx wasp build
+        # Full install before bundle (tsc/rollup/@tsconfig/node24 are devDeps), prune after.
+        - cd .wasp/out/server && NPM_CONFIG_AUDIT=false NPM_CONFIG_ENGINE_STRICT=false npm install
         - cd .wasp/out/server && npm run bundle
-        - cp scripts/migrate-prod.cjs migrate-prod.cjs
+        - cd .wasp/out/server && npm prune --omit=dev
       deployFiles:
-        - node_modules
-        - migrate-prod.cjs
         - .wasp/out/server/bundle
         - .wasp/out/server/node_modules
         - .wasp/out/server/package.json
-        - .wasp/out/db
+        - .wasp/out/libs
       cache:
         - node_modules
         - .wasp/out
-    deploy:
-      readinessCheck:
-        httpGet:
-          port: 3001
-          path: /
     run:
       base: nodejs@24
       os: ubuntu
-      initCommands:
-        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node migrate-prod.cjs
       ports:
         - port: 3001
           httpSupport: true
       envVariables:
         NODE_ENV: production
-        DATABASE_URL: ${db_connectionString}
-      start: sh -c 'cd .wasp/out/server && npm run start-production'
+        DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/${db_dbName}
+        JWT_SECRET: wasp-zerops-hello-world-demo-jwt-v1
+      start: sh -c 'cd .wasp/out/server && node --enable-source-maps bundle/server.js'
 
   - setup: dev
     build:
