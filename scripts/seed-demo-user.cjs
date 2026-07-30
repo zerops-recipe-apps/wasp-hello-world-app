@@ -3,6 +3,31 @@
 const DEMO_USERNAME = "demo";
 const DEMO_PASSWORD = "demo-zerops";
 
+const MAX_DB_ATTEMPTS = 60;
+const RETRY_DELAY_MS = 2000;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForDatabase(prisma) {
+  for (let attempt = 1; attempt <= MAX_DB_ATTEMPTS; attempt++) {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      return;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (attempt === MAX_DB_ATTEMPTS) {
+        throw error;
+      }
+      console.log(
+        `seed-demo-user: database not ready (${attempt}/${MAX_DB_ATTEMPTS}), retrying... (${message})`,
+      );
+      await sleep(RETRY_DELAY_MS);
+    }
+  }
+}
+
 async function main() {
   if (!process.env.DATABASE_URL) {
     console.error("seed-demo-user: DATABASE_URL is not set");
@@ -15,6 +40,8 @@ async function main() {
   const prisma = new PrismaClient();
 
   try {
+    await waitForDatabase(prisma);
+
     const existing = await prisma.authIdentity.findFirst({
       where: {
         providerName: "username",
