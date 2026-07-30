@@ -42,7 +42,10 @@ zerops:
         - NPM_CONFIG_PRODUCTION=false NPM_CONFIG_ENGINE_STRICT=false NPM_CONFIG_AUDIT=false npm install --min-release-age=0
         - npx wasp install
         - npx wasp build
-        - cd .wasp/out/server && NPM_CONFIG_AUDIT=false npm install --omit=dev && npm run bundle
+        # Bundle needs devDeps (tsc, rollup) — install full, bundle, then prune.
+        - cd .wasp/out/server && NPM_CONFIG_AUDIT=false NPM_CONFIG_ENGINE_STRICT=false npm install
+        - cd .wasp/out/server && npm run bundle
+        - cd .wasp/out/server && npm prune --omit=dev
         - test -f .wasp/out/server/bundle/server.js
 
       deployFiles:
