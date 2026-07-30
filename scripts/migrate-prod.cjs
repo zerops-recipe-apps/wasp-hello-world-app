@@ -3,6 +3,7 @@
 const { spawnSync } = require('child_process');
 const { existsSync, readdirSync } = require('fs');
 const path = require('path');
+const { resolveDatabaseUrl } = require('./database-url.cjs');
 
 const root = process.cwd();
 const schema = path.join(root, '.wasp/out/db/schema.prisma');
@@ -15,6 +16,13 @@ const RETRY_DELAY_MS = 2000;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function quoteIdent(name) {
+  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) {
+    throw new Error(`unsafe SQL identifier: ${name}`);
+  }
+  return `"${name}"`;
 }
 
 function runPrisma(args, label) {
@@ -50,6 +58,45 @@ function runPrisma(args, label) {
   };
 }
 
+async function prepareDatabase() {
+  const { PrismaClient } = await import('@prisma/client');
+  const prisma = new PrismaClient();
+
+  try {
+    const rows = await prisma.$queryRaw`
+      SELECT
+        current_user AS "user",
+        current_database() AS database,
+        has_schema_privilege(current_user, 'public', 'CREATE') AS "canCreate"
+    `;
+    const info = rows[0];
+    console.log(
+      `migrate-prod: connected as ${info.user} to database "${info.database}" (public CREATE: ${info.canCreate})`,
+    );
+
+    if (info.canCreate) {
+      return;
+    }
+
+    try {
+      await prisma.$executeRawUnsafe(
+        `GRANT ALL ON SCHEMA public TO ${quoteIdent(info.user)}`,
+      );
+      console.log('migrate-prod: granted ALL on schema public');
+    } catch (grantError) {
+      const message =
+        grantError instanceof Error ? grantError.message : String(grantError);
+      console.error(
+        'migrate-prod: cannot create objects in schema public and grant failed:',
+        message,
+      );
+      throw grantError;
+    }
+  } finally {
+    await prisma.$disconnect().catch(() => {});
+  }
+}
+
 async function waitForDatabase() {
   const { PrismaClient } = await import('@prisma/client');
 
@@ -60,6 +107,7 @@ async function waitForDatabase() {
     try {
       await prisma.$queryRaw`SELECT 1`;
       console.log('migrate-prod: database connection OK');
+      await prepareDatabase();
       return;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -82,6 +130,8 @@ async function main() {
     console.error('migrate-prod: DATABASE_URL is not set');
     process.exit(1);
   }
+
+  resolveDatabaseUrl();
 
   if (!existsSync(prismaCli) && !existsSync(prismaBin)) {
     console.error('migrate-prod: prisma CLI not found in node_modules');

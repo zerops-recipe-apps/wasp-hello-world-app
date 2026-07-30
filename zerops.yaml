@@ -48,12 +48,14 @@ zerops:
         - cp -R migrations/. .wasp/out/db/migrations/
         - cd .wasp/out/server && npm run bundle
         - cp scripts/migrate-prod.cjs migrate-prod.cjs
+        - cp scripts/database-url.cjs database-url.cjs
         - cp scripts/seed-demo-user.cjs seed-demo-user.cjs
         - test -d .wasp/out/db/migrations
 
       deployFiles:
         - node_modules
         - migrate-prod.cjs
+        - database-url.cjs
         - seed-demo-user.cjs
         - .wasp/out/server/bundle
         - .wasp/out/server/node_modules
@@ -81,7 +83,10 @@ zerops:
           httpSupport: true
       envVariables:
         NODE_ENV: production
-        DATABASE_URL: ${db_connectionString}
+        # Explicit db name — ${db_connectionString} can target the "postgres"
+        # maintenance DB where the app user lacks CREATE on schema public (PG 15+).
+        DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/${db_dbName}
+        ZEROPS_DB_NAME: ${db_dbName}
       start: sh -c 'cd .wasp/out/server && npm run start-production'
 
   # Dev setup: deploys full source so a developer or agent can SSH
@@ -106,5 +111,6 @@ zerops:
         - port: 3001
           httpSupport: true
       envVariables:
-        DATABASE_URL: ${db_connectionString}
+        DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/${db_dbName}
+        ZEROPS_DB_NAME: ${db_dbName}
       start: zsc noop --silent

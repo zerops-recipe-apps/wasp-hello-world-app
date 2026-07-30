@@ -1,5 +1,6 @@
 // Seeds the predefined demo user on Zerops after migrations.
 // Idempotent — safe to run on every deploy via zsc execOnce.
+const { resolveDatabaseUrl } = require("./database-url.cjs");
 const DEMO_USERNAME = "demo";
 const DEMO_PASSWORD = "demo-zerops";
 
@@ -33,6 +34,8 @@ async function main() {
     console.error("seed-demo-user: DATABASE_URL is not set");
     process.exit(1);
   }
+
+  resolveDatabaseUrl();
 
   const { sanitizeAndSerializeProviderData } = await import("wasp/server/auth");
   const { PrismaClient } = await import("@prisma/client");
