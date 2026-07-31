@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import {
   getVisitStat,
   recordVisit,
@@ -17,10 +17,17 @@ import {
 export function MainPage({ user }: { user: AuthUser }) {
   const { data: visitStat, isLoading, error, refetch } = useQuery(getVisitStat);
   const recordVisitFn = useAction(recordVisit);
+  const visitRecorded = useRef(false);
 
   useEffect(() => {
-    void recordVisitFn(undefined).then(() => refetch());
-  }, [recordVisitFn, refetch]);
+    if (visitRecorded.current) return;
+    visitRecorded.current = true;
+    void recordVisitFn(undefined)
+      .then(() => refetch())
+      .catch(() => refetch());
+    // Once per mount — including recordVisitFn/refetch retriggers an infinite loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const environmentClass = environmentBadgeClass(BUILD_ENV.environment);
   const formattedBuildTime = formatBuildTime(BUILD_ENV.buildTime);
   const username = user.identities.username?.id ?? "user";
