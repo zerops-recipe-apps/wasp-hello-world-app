@@ -1,12 +1,14 @@
 # yaml-language-server: $schema=https://api.app-prg1.zerops.io/api/rest/public/settings/import-project-yaml-json-schema.json
 #zeropsPreprocessor=on
 
-# Wasp hello world — small production environment (stage).
-# Two app containers (Nginx) and two API containers behind
-# the project balancer for zero-downtime deploys.
-
+# Wasp hello world — local development environment.
+# Cloud SPA + API + database. Run `wasp start` on your laptop against the
+# Zerops DB via `zcli vpn up`, or use the deployed SPA subdomain.
+#
+# Static hostname `app` → https://app-${zeropsSubdomainHost}.prg1.zerops.app
+# Legacy/recipe `client-*` URLs also work — api CORS allows both (serverSetup.ts).
 project:
-  name: wasp-hello-world-small-prod
+  name: wasp-hello-world-local
   envVariables:
     REACT_APP_API_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
     WASP_SERVER_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
@@ -19,10 +21,8 @@ services:
     zeropsSetup: prod-client
     buildFromGit: https://github.com/zerops-recipe-apps/wasp-hello-world-app
     enableSubdomainAccess: true
-    minContainers: 2
     verticalAutoscaling:
-      minRam: 0.25
-      minFreeRamGB: 0.125
+      minRam: 0.5
 
   - hostname: api
     type: nodejs@24
@@ -30,16 +30,13 @@ services:
     zeropsSetup: prod-api
     buildFromGit: https://github.com/zerops-recipe-apps/wasp-hello-world-app
     enableSubdomainAccess: true
-    minContainers: 2
     verticalAutoscaling:
       minRam: 0.5
-      minFreeRamGB: 0.25
-    # Wasp prod-api reads these at runtime for CORS and auth redirects.
     envVariables:
       WASP_SERVER_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
       WASP_WEB_CLIENT_URL: https://app-${zeropsSubdomainHost}.prg1.zerops.app
 
   - hostname: db
     type: postgresql:single@16
-    profile: oltp-production
+    profile: oltp-hobby
     priority: 10
