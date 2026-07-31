@@ -61,27 +61,13 @@ async function main() {
   try {
     await waitForDatabase(prisma);
 
-    const existing = await prisma.authIdentity.findFirst({
-      where: {
-        providerName: "username",
-        providerUserId: DEMO_PROVIDER_USER_ID,
-      },
+    // Drop stale demo auth rows so every deploy leaves a known-good login.
+    const stale = await prisma.authIdentity.findMany({
+      where: { providerName: "username", providerUserId: DEMO_PROVIDER_USER_ID },
+      select: { authId: true },
     });
-
-    if (existing) {
-      await prisma.authIdentity.update({
-        where: {
-          providerName_providerUserId: {
-            providerName: "username",
-            providerUserId: DEMO_PROVIDER_USER_ID,
-          },
-        },
-        data: { providerData },
-      });
-      console.log(
-        `seed-demo-user: refreshed password for "${DEMO_USERNAME}" (${DEMO_PROVIDER_USER_ID})`,
-      );
-      return;
+    for (const row of stale) {
+      await prisma.auth.delete({ where: { id: row.authId } });
     }
 
     await prisma.user.create({

@@ -62,8 +62,9 @@ zerops:
       base: nodejs@24
       os: ubuntu
       initCommands:
-        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node scripts/migrate-prod.cjs
-        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node scripts/seed-demo-user.cjs
+        # Separate execOnce keys — migrate and seed must both run once per deploy.
+        - zsc execOnce ${appVersionId}-migrate --retryUntilSuccessful -- node scripts/migrate-prod.cjs
+        - zsc execOnce ${appVersionId}-seed --retryUntilSuccessful -- node scripts/seed-demo-user.cjs
       ports:
         - port: 3001
           httpSupport: true
