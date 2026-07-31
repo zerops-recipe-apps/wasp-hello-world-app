@@ -2,6 +2,6 @@
 // Do not edit — this file is overwritten on every build.
 export const BUILD_ENV = {
   version: '0.25.0',
-  buildTime: '2026-07-29T13:55:30.635Z',
-  environment: 'development',
+  buildTime: '2026-07-31T13:28:44.556Z',
+  environment: 'production',
 };

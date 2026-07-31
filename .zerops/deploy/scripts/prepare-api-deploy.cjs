@@ -172,10 +172,6 @@ execSync(`npx prisma generate --schema=${schema}`, {
   stdio: "inherit",
   env: npmEnv,
 });
-// The server install pulls in @prisma/client as a peer dep of
-// @lucia-auth/adapter-prisma; its postinstall leaves an ungenerated .prisma
-// stub that shadows the deploy-root client at runtime. Overwrite it with the
-// freshly generated client.
 copyTree(
   path.join(deploy, "node_modules/.prisma"),
   path.join(deployServer, "node_modules/.prisma"),

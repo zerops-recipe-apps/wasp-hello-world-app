@@ -16,7 +16,8 @@ zerops:
         - npm run build:client
       envVariables:
         RUNTIME_APP_ENV: production
-        REACT_APP_API_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
+        # Baked into the SPA at build time — must match project REACT_APP_API_URL in import.yaml.
+        REACT_APP_API_URL: ${REACT_APP_API_URL}
 
       deployFiles:
         # Strip build/ prefix — index.html + assets become the Nginx docroot.
@@ -74,9 +75,9 @@ zerops:
         DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/${db_dbName}
         APP_DB_NAME: ${db_dbName}
         JWT_SECRET: wasp-zerops-hello-world-demo-jwt-v1
-        # Wasp 0.25 prod server env (see wasp.sh/docs/deployment/env-vars).
-        WASP_SERVER_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
-        WASP_WEB_CLIENT_URL: https://app-${zeropsSubdomainHost}.prg1.zerops.app
+        # Wasp 0.25 prod server env — inherit public URLs from import.yaml project env.
+        WASP_SERVER_URL: ${WASP_SERVER_URL}
+        WASP_WEB_CLIENT_URL: ${WASP_WEB_CLIENT_URL}
       start: sh -c 'cd .wasp/out/server && NODE_ENV=production node --enable-source-maps bundle/server.js'
 
   # Dev setup: deploys full source so a developer or agent can SSH

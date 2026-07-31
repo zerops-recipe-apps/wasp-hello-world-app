@@ -1,15 +1,13 @@
 // Seeds the predefined demo user on Zerops after migrations.
-// Idempotent — safe to run on every deploy via zsc execOnce.
+// Idempotent — creates or refreshes the demo password hash on every deploy.
 const path = require("path");
+const { pathToFileURL } = require("url");
 const { resolveDatabaseUrl } = require(path.join(__dirname, "database-url.cjs"));
 
 const DEMO_USERNAME = "demo";
-const DEMO_PASSWORD = "demo-zerops";
-// Argon2 hash for "demo-zerops" (Wasp @wasp.sh/lib-auth / username provider format).
-const DEMO_PROVIDER_DATA = JSON.stringify({
-  hashedPassword:
-    "$argon2id$v=19$m=19456,t=2,p=1$yhCB1BCbCegdKdPDKSm04A$if6PbSBu4J38cn83Yse+e3vLNksIxkR5AcIghHo/7V0",
-});
+// Wasp normalizes username provider IDs to lowercase at login time.
+const DEMO_PROVIDER_USER_ID = DEMO_USERNAME.toLowerCase();
+const DEMO_PASSWORD = "demo-zerops1";
 
 const MAX_DB_ATTEMPTS = 60;
 const RETRY_DELAY_MS = 2000;
@@ -36,6 +34,15 @@ async function waitForDatabase(prisma) {
   }
 }
 
+async function loadHashPassword() {
+  const libAuth = path.join(
+    __dirname,
+    "../.wasp/out/server/node_modules/@wasp.sh/lib-auth/dist/node.js",
+  );
+  const { hashPassword } = await import(pathToFileURL(libAuth).href);
+  return hashPassword;
+}
+
 async function main() {
   if (!process.env.DATABASE_URL) {
     console.error("seed-demo-user: DATABASE_URL is not set");
@@ -44,22 +51,23 @@ async function main() {
 
   resolveDatabaseUrl();
 
+  const hashPassword = await loadHashPassword();
+  const hashedPassword = await hashPassword(DEMO_PASSWORD);
+  const providerData = JSON.stringify({ hashedPassword });
+
   const { PrismaClient } = await import("@prisma/client");
   const prisma = new PrismaClient();
 
   try {
     await waitForDatabase(prisma);
 
-    const existing = await prisma.authIdentity.findFirst({
-      where: {
-        providerName: "username",
-        providerUserId: DEMO_USERNAME,
-      },
+    // Drop stale demo auth rows so every deploy leaves a known-good login.
+    const stale = await prisma.authIdentity.findMany({
+      where: { providerName: "username", providerUserId: DEMO_PROVIDER_USER_ID },
+      select: { authId: true },
     });
-
-    if (existing) {
-      console.log(`seed-demo-user: "${DEMO_USERNAME}" already exists — skipping`);
-      return;
+    for (const row of stale) {
+      await prisma.auth.delete({ where: { id: row.authId } });
     }
 
     await prisma.user.create({
@@ -69,8 +77,8 @@ async function main() {
             identities: {
               create: {
                 providerName: "username",
-                providerUserId: DEMO_USERNAME,
-                providerData: DEMO_PROVIDER_DATA,
+                providerUserId: DEMO_PROVIDER_USER_ID,
+                providerData,
               },
             },
           },
