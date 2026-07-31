@@ -71,19 +71,8 @@ zerops:
           httpSupport: true
       envVariables:
         NODE_ENV: production
-<<<<<<< Updated upstream
         DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/db
       start: sh -c 'cd .wasp/out/server && npm run start-production'
-=======
-        PORT: 3001
-        DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/${db_dbName}
-        APP_DB_NAME: ${db_dbName}
-        JWT_SECRET: wasp-zerops-hello-world-demo-jwt-v1
-        # Wasp 0.25 prod server env (see wasp.sh/docs/deployment/env-vars).
-        WASP_SERVER_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
-        WASP_WEB_CLIENT_URL: https://app-${zeropsSubdomainHost}.prg1.zerops.app
-      start: sh -c 'cd .wasp/out/server && NODE_ENV=production node --enable-source-maps bundle/server.js'
->>>>>>> Stashed changes
 
   # Dev setup: deploys full source so a developer or agent can SSH
   # in and run `wasp start` (client :3000, server :3001).
