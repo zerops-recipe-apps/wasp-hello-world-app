@@ -76,7 +76,7 @@ zerops:
         JWT_SECRET: wasp-zerops-hello-world-demo-jwt-v1
         # Wasp 0.25 prod server env (see wasp.sh/docs/deployment/env-vars).
         WASP_SERVER_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
-        WASP_WEB_CLIENT_URL: https://client-${zeropsSubdomainHost}.prg1.zerops.app
+        WASP_WEB_CLIENT_URL: https://app-${zeropsSubdomainHost}.prg1.zerops.app
       start: sh -c 'cd .wasp/out/server && NODE_ENV=production node --enable-source-maps bundle/server.js'
 
   # Dev setup: deploys full source so a developer or agent can SSH

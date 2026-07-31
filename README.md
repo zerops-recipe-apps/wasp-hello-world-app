@@ -115,9 +115,9 @@ Set these at the **project** level in your recipe `import.yaml` (see [Wasp self-
 
 | Variable | Service | Purpose |
 |----------|---------|---------|
-| `REACT_APP_API_URL` | client (`prod-client`) | Baked into the SPA at build time |
+| `REACT_APP_API_URL` | app (`prod-client`) | Baked into the SPA at build time |
 | `WASP_SERVER_URL` | API (`prod-api`) | Public URL of the API (port 3001) — project env in `import.yaml`, auto-inherited |
-| `WASP_WEB_CLIENT_URL` | API (`prod-api`) | Public URL of the static client — project env in `import.yaml`, auto-inherited |
+| `WASP_WEB_CLIENT_URL` | API (`prod-api`) | Public URL of the static app (hostname `app`) — project env in `import.yaml`, auto-inherited |
 
 Demo login (seeded on deploy): **username** `demo`, **password** `demo-zerops1`. The home page requires auth; unauthenticated users are redirected to `/login`.
 
