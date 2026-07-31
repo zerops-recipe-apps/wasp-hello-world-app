@@ -110,6 +110,15 @@ fs.copyFileSync(
 const serverPkg = JSON.parse(
   fs.readFileSync(path.join(deployServer, "package.json"), "utf8"),
 );
+// Rollup keeps these bundle imports external, but Wasp hoists them to the
+// workspace root — declare them explicitly or the standalone install omits
+// them and the server dies with ERR_MODULE_NOT_FOUND (e.g. 'zod') on Zerops.
+for (const dep of ["zod", "lucia", "@lucia-auth/adapter-prisma"]) {
+  const { version } = JSON.parse(
+    fs.readFileSync(path.join(root, "node_modules", dep, "package.json"), "utf8"),
+  );
+  serverPkg.dependencies[dep] = version;
+}
 serverPkg.allowScripts = [
   ...(serverPkg.allowScripts ?? []),
   "@wasp.sh/lib-auth",
@@ -125,8 +134,8 @@ copyIfExists(
   path.join(deployServer, "package-lock.json"),
 );
 
-// Fresh prod install — avoids .bin shims (nodemon, semver) pointing outside deploy.
-execSync("npm install --omit=dev", {
+// Isolated prod install in deploy tree (not a workspace) — pulls in @wasp.sh/* from file: tgz.
+execSync("npm install --omit=dev --workspaces=false", {
   cwd: deployServer,
   stdio: "inherit",
   env: npmEnv,
@@ -153,12 +162,24 @@ fs.writeFileSync(
   `${JSON.stringify(runtimePkg, null, 2)}\n`,
 );
 
-execSync("npm install --omit=dev", { cwd: deploy, stdio: "inherit", env: npmEnv });
+execSync("npm install --omit=dev --workspaces=false", {
+  cwd: deploy,
+  stdio: "inherit",
+  env: npmEnv,
+});
 execSync(`npx prisma generate --schema=${schema}`, {
   cwd: deploy,
   stdio: "inherit",
   env: npmEnv,
 });
+// The server install pulls in @prisma/client as a peer dep of
+// @lucia-auth/adapter-prisma; its postinstall leaves an ungenerated .prisma
+// stub that shadows the deploy-root client at runtime. Overwrite it with the
+// freshly generated client.
+copyTree(
+  path.join(deploy, "node_modules/.prisma"),
+  path.join(deployServer, "node_modules/.prisma"),
+);
 
 const removedLinks = removeExternalSymlinks(deploy);
 if (removedLinks > 0) {
@@ -167,5 +188,11 @@ if (removedLinks > 0) {
   );
 }
 assertNoExternalSymlinks();
+
+requirePath(
+  path.join(
+    ".zerops/deploy/.wasp/out/server/node_modules/@wasp.sh/lib-auth/package.json",
+  ),
+);
 
 console.log("prepare-api-deploy: ready at .zerops/deploy/");

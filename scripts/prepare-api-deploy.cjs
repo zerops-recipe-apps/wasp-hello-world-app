@@ -110,6 +110,15 @@ fs.copyFileSync(
 const serverPkg = JSON.parse(
   fs.readFileSync(path.join(deployServer, "package.json"), "utf8"),
 );
+// Rollup keeps these bundle imports external, but Wasp hoists them to the
+// workspace root — declare them explicitly or the standalone install omits
+// them and the server dies with ERR_MODULE_NOT_FOUND (e.g. 'zod') on Zerops.
+for (const dep of ["zod", "lucia", "@lucia-auth/adapter-prisma"]) {
+  const { version } = JSON.parse(
+    fs.readFileSync(path.join(root, "node_modules", dep, "package.json"), "utf8"),
+  );
+  serverPkg.dependencies[dep] = version;
+}
 serverPkg.allowScripts = [
   ...(serverPkg.allowScripts ?? []),
   "@wasp.sh/lib-auth",
@@ -163,6 +172,10 @@ execSync(`npx prisma generate --schema=${schema}`, {
   stdio: "inherit",
   env: npmEnv,
 });
+copyTree(
+  path.join(deploy, "node_modules/.prisma"),
+  path.join(deployServer, "node_modules/.prisma"),
+);
 
 const removedLinks = removeExternalSymlinks(deploy);
 if (removedLinks > 0) {

@@ -6,7 +6,7 @@ cd .wasp/out/server
 export NPM_CONFIG_AUDIT=false
 export NPM_CONFIG_ENGINE_STRICT=false
 export NPM_CONFIG_PRODUCTION=false
-npm install
+npm install --workspaces=false
 npm run bundle
 npm prune --omit=dev
 test -f bundle/server.js

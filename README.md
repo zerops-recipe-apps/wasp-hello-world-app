@@ -82,7 +82,7 @@ zerops:
         NODE_ENV: production
         PORT: 3001
         DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/${db_dbName}
-        ZEROPS_DB_NAME: ${db_dbName}
+        APP_DB_NAME: ${db_dbName}
         JWT_SECRET: wasp-zerops-hello-world-demo-jwt-v1
       start: sh -c 'cd .wasp/out/server && NODE_ENV=production node --enable-source-maps bundle/server.js'
 
@@ -119,7 +119,7 @@ Set these at the **project** level in your recipe `import.yaml` (see [Wasp self-
 | `WASP_SERVER_URL` | API (`prod-api`) | Public URL of the API (port 3001) — project env in `import.yaml`, auto-inherited |
 | `WASP_WEB_CLIENT_URL` | API (`prod-api`) | Public URL of the static client — project env in `import.yaml`, auto-inherited |
 
-Demo login (seeded on deploy): **username** `demo`, **password** `demo-zerops`. The home page requires auth; unauthenticated users are redirected to `/login`.
+Demo login (seeded on deploy): **username** `demo`, **password** `demo-zerops1`. The home page requires auth; unauthenticated users are redirected to `/login`.
 
 The API service receives `DATABASE_URL` from `${db_*}` placeholders and runs `migrate-prod.cjs` plus `seed-demo-user.cjs` on deploy. If the API returns 502, verify `WASP_SERVER_URL` and `WASP_WEB_CLIENT_URL` exist on the project (re-import `import.yaml` env if needed).
 
@@ -131,7 +131,7 @@ npx wasp install
 npx wasp start db   # optional local Postgres via Wasp
 npx wasp db migrate-dev
 npx wasp db seed seedDemoUser
-npx wasp start      # client :3000, server :3001 — sign in with demo / demo-zerops
+npx wasp start      # client :3000, server :3001 — sign in with demo / demo-zerops1
 ```
 
 Production build locally:

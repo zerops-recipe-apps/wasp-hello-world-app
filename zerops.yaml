@@ -24,7 +24,6 @@ zerops:
 
       cache:
         - node_modules
-        - .wasp/out
 
     run:
       base: static
@@ -51,7 +50,6 @@ zerops:
 
       cache:
         - node_modules
-        - .wasp/out
 
     deploy:
       readinessCheck:
@@ -72,7 +70,7 @@ zerops:
         NODE_ENV: production
         PORT: 3001
         DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/${db_dbName}
-        ZEROPS_DB_NAME: ${db_dbName}
+        APP_DB_NAME: ${db_dbName}
         JWT_SECRET: wasp-zerops-hello-world-demo-jwt-v1
         # Wasp 0.25 prod server env (see wasp.sh/docs/deployment/env-vars).
         WASP_SERVER_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
@@ -102,5 +100,5 @@ zerops:
           httpSupport: true
       envVariables:
         DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/${db_dbName}
-        ZEROPS_DB_NAME: ${db_dbName}
+        APP_DB_NAME: ${db_dbName}
       start: zsc noop --silent

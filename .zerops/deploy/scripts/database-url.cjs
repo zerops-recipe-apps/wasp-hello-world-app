@@ -32,7 +32,7 @@ function resolveDatabaseUrl() {
 
   const currentDb = getDatabaseFromUrl(original);
   const targetDb =
-    process.env.ZEROPS_DB_NAME ||
+    process.env.APP_DB_NAME ||
     process.env.db_dbName ||
     (currentDb === 'postgres' ? 'db' : null);
 
