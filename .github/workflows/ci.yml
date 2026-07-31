@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.14.1"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --min-release-age=0
+
+      - name: Install Wasp project deps
+        run: npx wasp install
+
+      - name: Compile Wasp project
+        run: npx wasp compile
+
+      - name: Build production artifacts
+        run: npm run build
+        env:
+          REACT_APP_API_URL: http://localhost:3001
+          RUNTIME_APP_ENV: production

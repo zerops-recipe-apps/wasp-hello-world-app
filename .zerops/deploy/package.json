@@ -1,0 +1,16 @@
+{
+  "name": "wasp-api-runtime",
+  "private": true,
+  "allowScripts": [
+    "prisma",
+    "@prisma/client",
+    "@prisma/engines",
+    "@wasp.sh/lib-auth",
+    "@wasp.sh/lib-vite-ssr",
+    "esbuild"
+  ],
+  "dependencies": {
+    "prisma": "5.19.1",
+    "@prisma/client": "5.19.1"
+  }
+}

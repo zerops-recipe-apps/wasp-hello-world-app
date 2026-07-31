@@ -7,3 +7,13 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
+
+// Single-row counter seeded by migration — proves client → API → PostgreSQL.
+model VisitStat {
+  id    Int @id @default(1)
+  count Int @default(0)
+}
+
+model User {
+  id Int @id @default(autoincrement())
+}

@@ -1,7 +1,7 @@
 # Wasp Hello World Recipe App
 
 <!-- #ZEROPS_EXTRACT_START:intro# -->
-A minimal [Wasp](https://wasp.sh/) full-stack application — React client, Node.js server, and PostgreSQL — deployed on [Zerops](https://zerops.io) as separate static and API services with Prisma migrations.
+A minimal [Wasp](https://wasp.sh/) full-stack application — React client, Node.js API, PostgreSQL, and a Prisma query — deployed on [Zerops](https://zerops.io) as separate static and API services.
 <!-- #ZEROPS_EXTRACT_END:intro# -->
 
 Used within [Wasp Hello World recipe](https://app.zerops.io/recipes/wasp-hello-world) for [Zerops](https://zerops.io) platform.
@@ -10,7 +10,7 @@ Used within [Wasp Hello World recipe](https://app.zerops.io/recipes/wasp-hello-w
 
 [![Deploy on Zerops](https://github.com/zeropsio/recipe-shared-assets/blob/main/deploy-button/light/deploy-button.svg)](https://app.zerops.io/recipes/wasp-hello-world?environment=small-production)
 
-![react cover](https://github.com/zeropsio/recipe-shared-assets/blob/main/covers/svg/cover-react.svg)
+![wasp cover](https://github.com/zerops-recipe-apps/wasp-hello-world-app/blob/main/docs/cover-wasp.svg)
 
 ## Integration Guide
 
@@ -23,7 +23,7 @@ The main application configuration file you place at the root of your repository
 Wasp deploys as **two production services** from one repo:
 
 - `prod-client` — builds the React SPA (`wasp build` + `vite build`) and serves static assets via Nginx.
-- `prod-api` — runs the bundled Node.js server from `.wasp/out/server/bundle/` with Prisma migrations.
+- `prod-api` — runs the bundled Node.js server from `.wasp/out/server/bundle/` and applies Prisma migrations on deploy.
 
 ```yaml
 zerops:
@@ -31,11 +31,13 @@ zerops:
     build:
       base: nodejs@24
       buildCommands:
-        - npm install --ignore-scripts=false
-        - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
+        - npm install --min-release-age=0
+        - npx wasp install
         - node scripts/generate-build-env.cjs
-        - wasp build
+        - npx wasp build
         - npm run build:client
+      envVariables:
+        RUNTIME_APP_ENV: production
       deployFiles:
         - .wasp/out/web-app/build/~
       cache:
@@ -47,17 +49,16 @@ zerops:
   - setup: prod-api
     build:
       base: nodejs@24
+      os: ubuntu
       buildCommands:
-        - npm install --ignore-scripts=false
-        - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
-        - wasp build
-        - cd .wasp/out/server && npm run bundle
+        - NPM_CONFIG_PRODUCTION=false NPM_CONFIG_ENGINE_STRICT=false NPM_CONFIG_AUDIT=false npm install --min-release-age=0
+        - npx wasp install
+        - npx wasp build
+        - cp -R migrations/. .wasp/out/db/migrations/
+        - sh scripts/bundle-server.sh
+        - node scripts/prepare-api-deploy.cjs
       deployFiles:
-        - node_modules
-        - .wasp/out/server/bundle
-        - .wasp/out/server/node_modules
-        - .wasp/out/server/package*.json
-        - .wasp/out/db
+        - .zerops/deploy/~
       cache:
         - node_modules
         - .wasp/out
@@ -65,26 +66,33 @@ zerops:
       readinessCheck:
         httpGet:
           port: 3001
-          path: /
+          path: /auth/me
+        failureTimeout: 5m0s
+        retryPeriod: 10s
     run:
       base: nodejs@24
+      os: ubuntu
       initCommands:
-        - zsc execOnce ${appVersionId} -- sh -c 'cd .wasp/out/server && npm run db-migrate-prod'
+        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node scripts/migrate-prod.cjs
+        - zsc execOnce ${appVersionId} --retryUntilSuccessful -- node scripts/seed-demo-user.cjs
       ports:
         - port: 3001
           httpSupport: true
       envVariables:
         NODE_ENV: production
-        DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/db
-      start: sh -c 'cd .wasp/out/server && npm run start-production'
+        PORT: 3001
+        DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/${db_dbName}
+        APP_DB_NAME: ${db_dbName}
+        JWT_SECRET: wasp-zerops-hello-world-demo-jwt-v1
+      start: sh -c 'cd .wasp/out/server && NODE_ENV=production node --enable-source-maps bundle/server.js'
 
   - setup: dev
     build:
       base: nodejs@24
       os: ubuntu
       buildCommands:
-        - npm install --ignore-scripts=false
-        - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
+        - npm install --min-release-age=0
+        - npx wasp install
       deployFiles: ./
       cache:
         - node_modules
@@ -97,7 +105,7 @@ zerops:
         - port: 3001
           httpSupport: true
       envVariables:
-        DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/db
+        DATABASE_URL: ${db_connectionString}
       start: zsc noop --silent
 ```
 
@@ -108,18 +116,22 @@ Set these at the **project** level in your recipe `import.yaml` (see [Wasp self-
 | Variable | Service | Purpose |
 |----------|---------|---------|
 | `REACT_APP_API_URL` | client (`prod-client`) | Baked into the SPA at build time |
-| `WASP_SERVER_URL` | API (`prod-api`) | Public URL of the API (port 3001) |
-| `WASP_WEB_CLIENT_URL` | API (`prod-api`) | Public URL of the static client |
+| `WASP_SERVER_URL` | API (`prod-api`) | Public URL of the API (port 3001) — project env in `import.yaml`, auto-inherited |
+| `WASP_WEB_CLIENT_URL` | API (`prod-api`) | Public URL of the static client — project env in `import.yaml`, auto-inherited |
 
-The API service also receives `DATABASE_URL` from `${db_*}` hostname references in `zerops.yaml`.
+Demo login (seeded on deploy): **username** `demo`, **password** `demo-zerops1`. The home page requires auth; unauthenticated users are redirected to `/login`.
+
+The API service receives `DATABASE_URL` from `${db_*}` placeholders and runs `migrate-prod.cjs` plus `seed-demo-user.cjs` on deploy. If the API returns 502, verify `WASP_SERVER_URL` and `WASP_WEB_CLIENT_URL` exist on the project (re-import `import.yaml` env if needed).
 
 ### 3. Local development
 
 ```bash
-npm install --ignore-scripts=false
-npm install -g @wasp.sh/wasp-cli@0.25.0
-wasp start db   # optional local Postgres via Wasp
-wasp start      # client :3000, server :3001
+npm install --min-release-age=0
+npx wasp install
+npx wasp start db   # optional local Postgres via Wasp
+npx wasp db migrate-dev
+npx wasp db seed seedDemoUser
+npx wasp start      # client :3000, server :3001 — sign in with demo / demo-zerops1
 ```
 
 Production build locally:

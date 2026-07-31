@@ -10,69 +10,74 @@ zerops:
     build:
       base: nodejs@24
       buildCommands:
-        # Wasp and Prisma need install scripts — override the repo
-        # .npmrc ignore-scripts default for the build container only.
-        - npm install --ignore-scripts=false
-        - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
-        # Generate src/build-env.ts with Wasp version, build timestamp,
-        # and environment — Vite inlines this into the client bundle.
-        - node scripts/generate-build-env.cjs
-        - wasp build
+        - npm install --min-release-age=0
+        - npx wasp install
+        - npx wasp build
         - npm run build:client
+      envVariables:
+        RUNTIME_APP_ENV: production
+        REACT_APP_API_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
 
       deployFiles:
-        # Strip build/ prefix — contents become the Nginx document root.
+        # Strip build/ prefix — index.html + assets become the Nginx docroot.
         - .wasp/out/web-app/build/~
 
       cache:
         - node_modules
-        - .wasp/out
 
     run:
       base: static
 
-  # Production API: Wasp Node.js server with Prisma. Deploys the
-  # pre-bundled Express app from .wasp/out/server/bundle/.
+  # Production API: bundle via scripts/bundle-server.sh, clean deploy tree
+  # (prepare-api-deploy.cjs — same idea as nextjs-ssr migrate.cjs / nestjs dist+node_modules).
   - setup: prod-api
     build:
       base: nodejs@24
+      os: ubuntu
       buildCommands:
-        - npm install --ignore-scripts=false
-        - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
-        - wasp build
-        - cd .wasp/out/server && npm run bundle
+        - NPM_CONFIG_PRODUCTION=false NPM_CONFIG_ENGINE_STRICT=false NPM_CONFIG_AUDIT=false npm install --min-release-age=0
+        - npx wasp install
+        - npx wasp build
+        - node scripts/patch-api-root.cjs
+        - cp -R migrations/. .wasp/out/db/migrations/
+        - sh scripts/bundle-server.sh
+        - node scripts/prepare-api-deploy.cjs
+        - test -f .zerops/deploy/.wasp/out/server/bundle/server.js
+        - test -d .zerops/deploy/.wasp/out/server/node_modules/@wasp.sh/lib-auth
+        - test -d .zerops/deploy/node_modules/prisma
 
       deployFiles:
-        # Root node_modules carries @prisma/client for migrations.
-        - node_modules
-        - .wasp/out/server/bundle
-        - .wasp/out/server/node_modules
-        - .wasp/out/server/package*.json
-        - .wasp/out/db
+        - .zerops/deploy/~
 
       cache:
         - node_modules
-        - .wasp/out
 
     deploy:
       readinessCheck:
         httpGet:
           port: 3001
-          path: /
+          path: /auth/me
 
     run:
       base: nodejs@24
-      # zsc execOnce runs Prisma migrate deploy exactly once per
-      # app version — safe when minContainers > 1.
+      os: ubuntu
       initCommands:
-        - zsc execOnce ${appVersionId} -- sh -c 'cd .wasp/out/server && npm run db-migrate-prod'
+        # Separate execOnce keys — migrate and seed must both run once per deploy.
+        - zsc execOnce ${appVersionId}-migrate --retryUntilSuccessful -- node scripts/migrate-prod.cjs
+        - zsc execOnce ${appVersionId}-seed --retryUntilSuccessful -- node scripts/seed-demo-user.cjs
       ports:
         - port: 3001
           httpSupport: true
       envVariables:
         NODE_ENV: production
-        DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/db
-      start: sh -c 'cd .wasp/out/server && npm run start-production'
+        PORT: 3001
+        DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/${db_dbName}
+        APP_DB_NAME: ${db_dbName}
+        JWT_SECRET: wasp-zerops-hello-world-demo-jwt-v1
+        # Wasp 0.25 prod server env (see wasp.sh/docs/deployment/env-vars).
+        WASP_SERVER_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
+        WASP_WEB_CLIENT_URL: https://client-${zeropsSubdomainHost}.prg1.zerops.app
+      start: sh -c 'cd .wasp/out/server && NODE_ENV=production node --enable-source-maps bundle/server.js'
 
   # Dev setup: deploys full source so a developer or agent can SSH
   # in and run `wasp start` (client :3000, server :3001).
@@ -81,8 +86,8 @@ zerops:
       base: nodejs@24
       os: ubuntu
       buildCommands:
-        - npm install --ignore-scripts=false
-        - npm install -g @wasp.sh/wasp-cli@0.25.0 --ignore-scripts=false
+        - npm install --min-release-age=0
+        - npx wasp install
       deployFiles: ./
       cache:
         - node_modules
@@ -96,5 +101,6 @@ zerops:
         - port: 3001
           httpSupport: true
       envVariables:
-        DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/db
+        DATABASE_URL: postgresql://${db_user}:${db_password}@${db_hostname}:${db_port}/${db_dbName}
+        APP_DB_NAME: ${db_dbName}
       start: zsc noop --silent

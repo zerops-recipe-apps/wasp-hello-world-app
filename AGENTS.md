@@ -46,8 +46,8 @@ This project uses the Wasp framework.
 
 ## Notes
 
-- Wasp 0.25 requires Node.js `>=24.14.1` — Zerops uses `nodejs@24`.
-- Build commands pass `--ignore-scripts=false` because Wasp/Prisma need install scripts; the repo `.npmrc` keeps `ignore-scripts=true` for local safety.
+- **Zerops runtime base:** `nodejs@24` with **`os: ubuntu`** on `prod-api` — Prisma's native engine fails on Alpine without OpenSSL (`Error load...` / invalid JSON from schema engine). Wasp's own Dockerfile runs `apk add openssl` on Alpine for the same reason.
+- `@wasp.sh/wasp-cli` is a devDependency; build uses `npx wasp` (no global install — npm 12 blocks global allowScripts). `.npmrc` keeps `ignore-scripts=false` so Wasp/Prisma install scripts run during `npm install`.
 - `REACT_APP_API_URL` is embedded into the client bundle at build time (Wasp 0.25 client env name).
 - `scripts/generate-build-env.cjs` writes `src/build-env.ts` at build time; Vite inlines it into the client bundle.
 - Static assets (logos, favicon, status-page.css) live in `public/` and are copied to the client build output.

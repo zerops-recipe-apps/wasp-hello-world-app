@@ -1,7 +1,7 @@
 {
   "name": "wasp-hello-world-app",
   "version": "1.0.0",
-  "description": "Minimal Wasp full-stack demo on Zerops (static React client, Node.js API, PostgreSQL).",
+  "description": "Minimal Wasp full-stack demo on Zerops — React client, Node.js API, PostgreSQL, Prisma query, and sample username auth.",
   "author": "Zerops",
   "license": "MIT",
   "repository": {
@@ -14,8 +14,15 @@
   },
   "private": true,
   "type": "module",
+  "allowScripts": [
+    "prisma",
+    "@prisma/client",
+    "@prisma/engines",
+    "@wasp.sh/wasp-cli",
+    "@wasp.sh/spec"
+  ],
   "engines": {
-    "node": ">=24.14.1"
+    "node": ">=24.0.0"
   },
   "scripts": {
     "build:client": "node scripts/build-client.cjs",
@@ -28,6 +35,7 @@
     "react-router": "^8.0.1"
   },
   "devDependencies": {
+    "@wasp.sh/wasp-cli": "0.25.0",
     "@types/node": "^24.0.0",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",

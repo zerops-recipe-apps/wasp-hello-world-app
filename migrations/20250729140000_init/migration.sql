@@ -1,0 +1,1 @@
+-- Baseline migration for the empty Wasp hello-world schema.
