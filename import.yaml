@@ -8,10 +8,10 @@ project:
   envVariables:
     REACT_APP_API_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
     WASP_SERVER_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
-    WASP_WEB_CLIENT_URL: https://client-${zeropsSubdomainHost}.prg1.zerops.app
+    WASP_WEB_CLIENT_URL: https://app-${zeropsSubdomainHost}.prg1.zerops.app
 
 services:
-  - hostname: client
+  - hostname: app
     type: static
     zeropsSetup: prod-client
     buildFromGit: https://github.com/zerops-recipe-apps/wasp-hello-world-app
@@ -33,7 +33,7 @@ services:
     # Belt-and-suspenders: Wasp requires these on the API at runtime (CORS + auth).
     envVariables:
       WASP_SERVER_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
-      WASP_WEB_CLIENT_URL: https://client-${zeropsSubdomainHost}.prg1.zerops.app
+      WASP_WEB_CLIENT_URL: https://app-${zeropsSubdomainHost}.prg1.zerops.app
 
   - hostname: db
     type: postgresql:single@16
