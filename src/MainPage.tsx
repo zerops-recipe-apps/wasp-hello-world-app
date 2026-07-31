@@ -1,4 +1,10 @@
-import { getVisitStat, useQuery } from "wasp/client/operations";
+import { useEffect } from "react";
+import {
+  getVisitStat,
+  recordVisit,
+  useAction,
+  useQuery,
+} from "wasp/client/operations";
 import { logout } from "wasp/client/auth";
 import type { AuthUser } from "wasp/auth";
 import { BUILD_ENV } from "./build-env";
@@ -9,7 +15,12 @@ import {
 } from "./shared/status-page";
 
 export function MainPage({ user }: { user: AuthUser }) {
-  const { data: visitStat, isLoading, error } = useQuery(getVisitStat);
+  const { data: visitStat, isLoading, error, refetch } = useQuery(getVisitStat);
+  const recordVisitFn = useAction(recordVisit);
+
+  useEffect(() => {
+    void recordVisitFn(undefined).then(() => refetch());
+  }, [recordVisitFn, refetch]);
   const environmentClass = environmentBadgeClass(BUILD_ENV.environment);
   const formattedBuildTime = formatBuildTime(BUILD_ENV.buildTime);
   const username = user.identities.username?.id ?? "user";
