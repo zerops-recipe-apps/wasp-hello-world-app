@@ -1,4 +1,5 @@
-import { app, page, query, route } from "@wasp.sh/spec";
+import { api, app, page, query, route } from "@wasp.sh/spec";
+import { getStatus } from "./src/apis" with { type: "ref" };
 import { seedDemoUser } from "./src/dbSeeds" with { type: "ref" };
 import { LoginPage } from "./src/LoginPage" with { type: "ref" };
 import { MainPage } from "./src/MainPage" with { type: "ref" };
@@ -26,5 +27,6 @@ export default app({
     route("RootRoute", "/", page(MainPage, { authRequired: true })),
     route("LoginRoute", "/login", page(LoginPage)),
     query(getVisitStat, { entities: ["VisitStat"] }),
+    api("GET", "/status", getStatus, { auth: false, entities: ["VisitStat"] }),
   ],
 });

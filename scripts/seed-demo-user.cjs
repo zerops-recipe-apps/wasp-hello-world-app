@@ -5,6 +5,8 @@ const { pathToFileURL } = require("url");
 const { resolveDatabaseUrl } = require(path.join(__dirname, "database-url.cjs"));
 
 const DEMO_USERNAME = "demo";
+// Wasp normalizes username provider IDs to lowercase at login time.
+const DEMO_PROVIDER_USER_ID = DEMO_USERNAME.toLowerCase();
 const DEMO_PASSWORD = "demo-zerops1";
 
 const MAX_DB_ATTEMPTS = 60;
@@ -62,7 +64,7 @@ async function main() {
     const existing = await prisma.authIdentity.findFirst({
       where: {
         providerName: "username",
-        providerUserId: DEMO_USERNAME,
+        providerUserId: DEMO_PROVIDER_USER_ID,
       },
     });
 
@@ -71,12 +73,14 @@ async function main() {
         where: {
           providerName_providerUserId: {
             providerName: "username",
-            providerUserId: DEMO_USERNAME,
+            providerUserId: DEMO_PROVIDER_USER_ID,
           },
         },
         data: { providerData },
       });
-      console.log(`seed-demo-user: refreshed password for "${DEMO_USERNAME}"`);
+      console.log(
+        `seed-demo-user: refreshed password for "${DEMO_USERNAME}" (${DEMO_PROVIDER_USER_ID})`,
+      );
       return;
     }
 
@@ -87,7 +91,7 @@ async function main() {
             identities: {
               create: {
                 providerName: "username",
-                providerUserId: DEMO_USERNAME,
+                providerUserId: DEMO_PROVIDER_USER_ID,
                 providerData,
               },
             },
