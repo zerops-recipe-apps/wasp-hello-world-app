@@ -111,17 +111,18 @@ zerops:
 
 ### 2. Environment variables
 
-Set these at the **project** level in your recipe `import.yaml` (see [Wasp self-hosted deployment](https://wasp.sh/docs/deployment/deployment-methods/self-hosted)):
+Set these at the **project** level in your recipe `import.yaml` as a value store (not Wasp runtime key names). `zerops.yaml` maps them into the app:
 
-| Variable | Service | Purpose |
-|----------|---------|---------|
-| `REACT_APP_API_URL` | app (`prod-client`) | Baked into the SPA at build time |
-| `WASP_SERVER_URL` | API (`prod-api`) | Public URL of the API (port 3001) — project env in `import.yaml`, auto-inherited |
-| `WASP_WEB_CLIENT_URL` | API (`prod-api`) | Public URL of the static app (hostname `app`) — project env in `import.yaml`, auto-inherited |
+| Import variable | Mapped in `zerops.yaml` | Purpose |
+|-----------------|-------------------------|---------|
+| `API_URL` | `REACT_APP_API_URL` (prod-client build), `WASP_SERVER_URL` (prod-api) | Public API URL (port 3001) |
+| `APP_URL` | `WASP_WEB_CLIENT_URL` (prod-api) | Public SPA URL (hostname `app`) |
+
+Do not set `envVariables` on individual services in `import.yaml` — that key is project-level only.
 
 Demo login (seeded on deploy): **username** `demo`, **password** `demo-zerops1`. The home page requires auth; unauthenticated users are redirected to `/login`.
 
-The API service receives `DATABASE_URL` from `${db_*}` placeholders and runs `migrate-prod.cjs` plus `seed-demo-user.cjs` on deploy. If the API returns 502, verify `WASP_SERVER_URL` and `WASP_WEB_CLIENT_URL` exist on the project (re-import `import.yaml` env if needed).
+The API service receives `DATABASE_URL` from `${db_*}` placeholders and runs `migrate-prod.cjs` plus `seed-demo-user.cjs` on deploy. If the API returns 502, verify `APP_URL` and `API_URL` exist on the project (re-import `import.yaml` env if needed).
 
 ### 3. Local development
 

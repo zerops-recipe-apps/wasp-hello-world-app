@@ -31,7 +31,7 @@ This project uses the Wasp framework.
 - Client HTTP: dev `3000` / prod `80` (nginx on `prod-client`)
 - API HTTP port: `3001` (`prod-api`)
 - Siblings: `db` (PostgreSQL) — env: `DATABASE_URL` (built from `${db_*}` in `zerops.yaml`)
-- Cross-service URLs (set in recipe `import.yaml`): `REACT_APP_API_URL`, `WASP_SERVER_URL`, `WASP_WEB_CLIENT_URL`
+- Cross-service URLs: project value store in `import.yaml` is `APP_URL` + `API_URL`; `zerops.yaml` maps them to Wasp keys (`REACT_APP_API_URL` / `WASP_SERVER_URL` ← `${API_URL}`, `WASP_WEB_CLIENT_URL` ← `${APP_URL}`)
 - Runtime base: dev `nodejs@24` / client prod `static` / API prod `nodejs@24`
 
 ## Zerops dev

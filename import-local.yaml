@@ -5,14 +5,14 @@
 # Cloud SPA + API + database. Run `wasp start` on your laptop against the
 # Zerops DB via `zcli vpn up`, or use the deployed SPA subdomain.
 #
-# Static hostname `app` → https://app-${zeropsSubdomainHost}.prg1.zerops.app
-# Legacy/recipe `client-*` URLs also work — api CORS allows both (serverSetup.ts).
+# Project envVariables are a value store — zerops.yaml maps them:
+#   REACT_APP_API_URL / WASP_SERVER_URL ← ${API_URL}
+#   WASP_WEB_CLIENT_URL                 ← ${APP_URL}
 project:
   name: wasp-hello-world-local
   envVariables:
-    REACT_APP_API_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
-    WASP_SERVER_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
-    WASP_WEB_CLIENT_URL: https://app-${zeropsSubdomainHost}.prg1.zerops.app
+    APP_URL: https://app-${zeropsSubdomainHost}.prg1.zerops.app
+    API_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
 
 services:
   - hostname: app
@@ -32,9 +32,6 @@ services:
     enableSubdomainAccess: true
     verticalAutoscaling:
       minRam: 0.5
-    envVariables:
-      WASP_SERVER_URL: https://api-${zeropsSubdomainHost}-3001.prg1.zerops.app
-      WASP_WEB_CLIENT_URL: https://app-${zeropsSubdomainHost}.prg1.zerops.app
 
   - hostname: db
     type: postgresql:single@16
