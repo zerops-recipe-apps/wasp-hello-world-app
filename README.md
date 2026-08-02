@@ -67,8 +67,8 @@ zerops:
         httpGet:
           port: 3001
           path: /auth/me
-        failureTimeout: 5m0s
-        retryPeriod: 10s
+        failureTimeout: 300
+        retryPeriod: 10
     run:
       base: nodejs@24
       os: ubuntu
@@ -142,5 +142,4 @@ export DATABASE_URL='postgresql://user:pass@localhost:5432/wasp'
 wasp build
 REACT_APP_API_URL='http://localhost:3001' npm run build:client
 ```
-
 <!-- #ZEROPS_EXTRACT_END:integration-guide# -->
