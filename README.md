@@ -66,7 +66,7 @@ zerops:
       readinessCheck:
         httpGet:
           port: 3001
-          path: /auth/me
+          path: /up
         failureTimeout: 300
         retryPeriod: 10
     run:
